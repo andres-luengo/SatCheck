@@ -1,0 +1,6 @@
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_46705_TIC409183335_0106.rawspec.0000.h5
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_47654_HIP26033_0109.rawspec.0000.h5
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_47019_HIP25260_0107.rawspec.0000.h5
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_47974_TIC409183335_0110.rawspec.0000.h5
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_47333_TIC409183335_0108.rawspec.0000.h5
+/home/ubuntu/scratch/satCheckData/blc00_guppi_59166_48294_HIP26037_0111.rawspec.0000.h5
