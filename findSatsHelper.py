@@ -255,5 +255,3 @@ def queryUCS():
     parsedData.to_csv()
 
     return outPath
-
-    #
