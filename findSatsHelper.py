@@ -1,4 +1,4 @@
-import os, sys, time
+import os, sys, time, glob
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,13 +20,17 @@ Following 10 functions taken from Chris Murphy's satellite code
 see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 '''
 
-def find_files():
+def find_files(inDir):
 
-    file = open('thresholded_significant_hits.txt')
-    content = file.read().split("\n")
-    file.close()
+    #file = open('thresholded_significant_hits.txt')
+    #content = file.read().split("\n")
+    #file.close()
+    #return content[:-1]
 
-    return content[:-1]
+    # read from input directory
+    return glob.glob(inDir+'*.h5')
+
+
 
 def pull_relevant_header_info(filename_array):
 

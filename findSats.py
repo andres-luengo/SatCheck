@@ -7,12 +7,21 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import argparse
 
 import ephem
 
 from findSatsHelper import *
 
 def main():
+    '''
+    dir [str] : directory that contains h5 files to check for satellites
+                must end with a '/'
+    '''
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
+    args = parser.parse_args()
 
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
                   "07":"jul","08":"aug","09":"sep","10":"oct","11":"nov", "12":"dec"}
@@ -29,7 +38,7 @@ def main():
     for i in gps_id_list:
         gps_ids = gps_ids + str(i) + ','
 
-    list_of_filenames = find_files()
+    list_of_filenames = find_files(args.dir)
 
     start_time_mjd, right_ascension, declination = pull_relevant_header_info(list_of_filenames)
 
