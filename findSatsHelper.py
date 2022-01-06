@@ -20,7 +20,7 @@ Following 10 functions taken from Chris Murphy's satellite code
 see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 '''
 
-def find_files(inDir):
+def find_files(inDir, pattern):
 
     #file = open('thresholded_significant_hits.txt')
     #content = file.read().split("\n")
@@ -28,7 +28,7 @@ def find_files(inDir):
     #return content[:-1]
 
     # read from input directory
-    return glob.glob(inDir+'*.h5')
+    return glob.glob(inDir+pattern)
 
 
 

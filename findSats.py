@@ -21,6 +21,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
+    parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
     args = parser.parse_args()
 
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -38,7 +39,7 @@ def main():
     for i in gps_id_list:
         gps_ids = gps_ids + str(i) + ','
 
-    list_of_filenames = find_files(args.dir)
+    list_of_filenames = find_files(args.dir, args.pattern)
 
     start_time_mjd, right_ascension, declination = pull_relevant_header_info(list_of_filenames)
 
