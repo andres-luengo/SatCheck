@@ -32,7 +32,7 @@ def main():
     gps = np.where(df['Purpose'] == 'Navigation/Global Positioning')[0]
     gps_data = df.loc[gps]
     gps_id_list = gps_data['NORAD Number'].tolist()
-    print(len(gps_id_list))
+    #print(len(gps_id_list))
 
     gps_list = []
     gps_ids = ''
@@ -40,7 +40,7 @@ def main():
         gps_ids = gps_ids + str(i) + ','
 
     list_of_filenames = find_files(args.dir, args.pattern)
-
+    print(args.dir)
     start_time_mjd, right_ascension, declination = pull_relevant_header_info(list_of_filenames)
 
     year_month_day_time = convert_mjd_to_date(start_time_mjd)
