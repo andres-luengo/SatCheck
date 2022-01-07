@@ -116,6 +116,7 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         day2 = str_time2.split("-")[2].split('T')[0]
 
         filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt"
+        print(filename)
 
         if not os.path.isfile(filename) or overwrite:
 
@@ -259,3 +260,28 @@ def queryUCS():
     parsedData.to_csv(outPath)
 
     return outPath
+
+def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex):
+
+    plt.scatter(unique_sat_info['Separation'], unique_sat_info['Time after start'], s = 1, label = stored_sats_in_obs)
+
+    print("++++++++++++++++++++++")
+    print(minindex , mintime , minpoint)
+    print("++++++++++++++++++++++++")
+    print("++++++++++++++++++++++++\n\n")
+    #plt.hlines(y=minpoint, xmin = 1, xmax = 300, label = 'Minpoint: ' + str(minpoint))
+    #plt.hlines(unique_sat_info['Time after start'], unique_sat_info['Separation'], lw = 2, label = minpoint)
+    plt.scatter(minpoint, mintime, s = 10, label = 'Min: ' + str("%.5fdeg " % minpoint) + str(mintime) + "s")
+    ymax = ephem.degrees('03:00:00')
+    ymax_rad = repr(ymax)
+
+    ymax_deg = np.rad2deg(float(ymax_rad))
+
+    plt.ylabel('Time after start (seconds)')
+    plt.xlabel('Separation (degrees)')
+    plt.ylim(0, 300)
+    plt.xlim(0, ymax_deg)
+    plot_name = fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]
+    plt.title(plot_name)
+    plt.legend()
+    plt.savefig(plot_name + '_time_sep_.png', transparent=False)

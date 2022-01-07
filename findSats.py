@@ -1,5 +1,5 @@
 '''
-Modified from Chris Murphy's Satllite code
+Modified from Chris Murphy's Satellite code
 see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 '''
 
@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
     parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
+    parser.add_argument('--plot', help='set to true to save plot of data', default=False)
     args = parser.parse_args()
 
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -78,8 +79,8 @@ def main():
                 satdict = load_tle(tle)
                 sat_hit_dict = separation(satdict, ra, dec, date, gbt)
 
-                print(sat_hit_dict)
-                print("\n\n")
+                #print(sat_hit_dict)
+                #print("\n\n")
 
                 if len(sat_hit_dict.keys()) > 0:
 
@@ -88,34 +89,26 @@ def main():
 
                         print("++++++++++++++++++")
 
-                        plt.scatter(unique_sat_info['Time after start'], unique_sat_info['Separation'], s = 1, label = stored_sats_in_obs)
+                        outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
+                        print(outname)
+                        separationData = pd.DataFrame(unique_sat_info)
+                        separationData.to_csv(outname)
+
                         minpoint = min(unique_sat_info['Separation'])
 
                         minindex = unique_sat_info['Separation'].index(minpoint)
                         mintime = unique_sat_info['Time after start'][minindex]
-                        print("++++++++++++++++++++++")
-                        print(minindex , mintime , minpoint)
-                        print("++++++++++++++++++++++++")
-                        print("++++++++++++++++++++++++\n\n")
-                        #plt.hlines(y=minpoint, xmin = 1, xmax = 300, label = 'Minpoint: ' + str(minpoint))
-                        #plt.hlines(unique_sat_info['Time after start'], unique_sat_info['Separation'], lw = 2, label = minpoint)
-                        plt.scatter(mintime, minpoint, s = 10, label = 'Min: ' + str("%.5fdeg " % minpoint) + str(mintime) + "s")
-                        ymax = ephem.degrees('03:00:00')
-                        ymax_rad = repr(ymax)
 
-                        ymax_deg = np.rad2deg(float(ymax_rad))
+                        if args.plot:
+                            plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
 
-                        plt.xlabel('Time after start (seconds)')
-                        plt.ylabel('Separation (degrees)')
-                        plt.xlim(0, 300)
-                        plt.ylim(0, ymax_deg)
-                        plot_name = fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]
-                        plt.title(plot_name)
-                        plt.legend()
-                        plt.savefig(plot_name + '_time_sep_.png')
                         files_affected_by_sats[fil_file] = minpoint
 
-    print(files_affected_by_sats)
+    #print(files_affected_by_sats)
+    for key in files_affected_by_sats:
+        files_affected_by_sats[key] = [files_affected_by_sats[key]]
+    affectedFiles = pd.DataFrame(files_affected_by_sats)
+    affectedFiles.to_csv(os.path.join(os.getcwd(), 'files_affected_by_sats.csv'))
 
 
 if __name__ == '__main__':
