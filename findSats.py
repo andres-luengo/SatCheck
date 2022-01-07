@@ -28,7 +28,7 @@ def main():
                   "07":"jul","08":"aug","09":"sep","10":"oct","11":"nov", "12":"dec"}
 
 
-    df = pd.read_csv(queryUCS(), header=1)
+    df = pd.read_csv(queryUCS())
     gps = np.where(df['Purpose'] == 'Navigation/Global Positioning')[0]
     gps_data = df.loc[gps]
     gps_id_list = gps_data['NORAD Number'].tolist()

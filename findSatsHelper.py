@@ -256,6 +256,6 @@ def queryUCS():
     dataArr = [s.split('\t') for s in strUCS.split('\n')]
     parsedData = pd.DataFrame(dataArr[1:], columns=dataArr[0])
 
-    parsedData.to_csv()
+    parsedData.to_csv(outPath)
 
     return outPath
