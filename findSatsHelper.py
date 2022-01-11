@@ -21,16 +21,7 @@ see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satel
 '''
 
 def find_files(inDir, pattern):
-
-    #file = open('thresholded_significant_hits.txt')
-    #content = file.read().split("\n")
-    #file.close()
-    #return content[:-1]
-
-    # read from input directory
     return glob.glob(inDir+pattern)
-
-
 
 def pull_relevant_header_info(filename_array):
 
@@ -43,8 +34,8 @@ def pull_relevant_header_info(filename_array):
         wf = Waterfall(every_file, load_data=False)
 
         start_time_mjd = wf.header['tstart']
-        right_ascension = wf.header['src_raj']
-        declination = wf.header['src_dej']
+        right_ascension = str(wf.header['src_raj'])
+        declination = str(wf.header['src_dej'])
 
         start_time_mjd_array.append(start_time_mjd)
         right_ascension_array.append(right_ascension)
@@ -52,40 +43,9 @@ def pull_relevant_header_info(filename_array):
 
     return start_time_mjd_array, right_ascension_array, declination_array
 
-def pull_ra(file):
-    wf = Waterfall(file, load_data=False)
-    right_ascension = str(wf.header['src_raj'])
-    #right_ascension = right_ascension.degree
-    return right_ascension
-
-def pull_dec(file):
-    wf = Waterfall(file, load_data=False)
-    declination = str(wf.header['src_dej'])
-    #declination = declination.degree
-    return declination
-
-def pull_start_time(file):
-    wf = Waterfall(file, load_data=False)
-    start_time_mjd = wf.header['tstart']
-    return start_time_mjd
-
-
-def convert_mjd_to_date(start_time_mjd):
-
-    array_of_start_times = []
-    startdate = Time(start_time_mjd, format='mjd') # Beginning mjd of observation
-    string_start_date = Time(startdate, format='isot')
-
-    for x in string_start_date:
-        array_of_start_times.append(str(x))
-
-    return array_of_start_times
-
 def convert(mjd):
     startdate = Time(mjd, format='mjd')
-    print(startdate)
     string_start_date = str(Time(startdate, format='isot'))
-    print(string_start_date)
     return string_start_date
 
 def query_space_track(fil_files, gps_ids, overwrite=False):
@@ -116,7 +76,7 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         day2 = str_time2.split("-")[2].split('T')[0]
 
         filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt"
-        print(filename)
+        print('Downloading TLEs to ', filename)
 
         if not os.path.isfile(filename) or overwrite:
 
@@ -177,23 +137,16 @@ def load_tle(filename):
 
     f.close()
 
-
-    print("%i TLEs loaded into: "%len(satlist) , filename)
-    print("%i unique satellites loaded: "%len(satdict.keys()))
     return satdict
 
 
 def separation(tle, ra_obs, dec_obs, start_time, gbt):
     sat_hit_dict = {}
     ra_obs = ra_obs.replace('h', ':').replace('m', ':').replace('s', '')
-    print("ra_obs  [", type(ra_obs).__name__, "]   :", ra_obs)
     dec_obs = dec_obs.replace('d', ':').replace('m',':').replace('s','')
-    print("dec_obs  [", type(dec_obs).__name__, "]   :", dec_obs)
 
     dec_obs = ephem.degrees(dec_obs)
-    print("dec_obs  [", type(dec_obs).__name__, "]   :", dec_obs)
     ra_obs = ephem.hours(ra_obs)
-    print("ra_obs  [", type(ra_obs).__name__, "]   :", ra_obs)
 
     for unique_sats, satellite_object in tle.items():
         ra = []
@@ -246,6 +199,8 @@ def queryUCS():
 
     returns : path to the downloaded file
     '''
+
+    print('Downloading newest UCS Satellite Database File')
 
     url = 'https://www.ucsusa.org/sites/default/files/2021-11/UCS-Satellite-Database-9-1-2021.txt'
     outPath = os.path.join(os.getcwd(), 'UCS-Satellite-Database.txt')
