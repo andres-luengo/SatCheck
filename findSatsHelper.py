@@ -107,7 +107,7 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         if filename not in array_of_TLE_filenames:
             array_of_TLE_filenames.append(filename)
 
-    return array_of_TLE_filenames
+    return np.array(array_of_TLE_filenames)
 
 
 def load_tle(filename):

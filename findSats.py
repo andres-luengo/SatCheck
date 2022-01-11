@@ -66,29 +66,30 @@ def main():
         day1 = date.split("-")[2].split('T')[0]
         filename = months[mon] + '_' + day1 + "_" +year + "_TLEs.txt"
 
-        fig, ax = plt.subplots()
-        for tle in tles:
-            if filename == tle:
-                satdict = load_tle(tle)
-                sat_hit_dict = separation(satdict, ra, dec, date, gbt)
+        whichTLE = np.where(filename == tles)[0]
+        tle = tles[whichTLE][0]
 
-                if len(sat_hit_dict.keys()) > 0:
-                    for stored_sats_in_obs, unique_sat_info in sat_hit_dict.items():
+        satdict = load_tle(tle)
+        sat_hit_dict = separation(satdict, ra, dec, date, gbt)
 
-                        outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
-                        print('Writing to: ', outname)
-                        separationData = pd.DataFrame(unique_sat_info)
-                        separationData.to_csv(outname)
+        if len(sat_hit_dict.keys()) > 0:
 
-                        minpoint = min(unique_sat_info['Separation'])
+            for stored_sats_in_obs, unique_sat_info in sat_hit_dict.items():
 
-                        minindex = unique_sat_info['Separation'].index(minpoint)
-                        mintime = unique_sat_info['Time after start'][minindex]
+                outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
+                print('Writing to: ', outname)
+                separationData = pd.DataFrame(unique_sat_info)
+                separationData.to_csv(outname)
 
-                        if args.plot:
-                            plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
+                minpoint = min(unique_sat_info['Separation'])
 
-                        files_affected_by_sats[fil_file] = minpoint
+                minindex = unique_sat_info['Separation'].index(minpoint)
+                mintime = unique_sat_info['Time after start'][minindex]
+
+                if args.plot:
+                    plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
+
+                files_affected_by_sats[fil_file] = minpoint
 
     for key in files_affected_by_sats:
         files_affected_by_sats[key] = [files_affected_by_sats[key]]
