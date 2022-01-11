@@ -110,7 +110,7 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         day2 = str_time2.split("-")[2].split('T')[0]
 
         filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt"
-        print('Downloading TLEs to ', filename)
+        #print('Downloading TLEs to ', filename)
 
         if not os.path.isfile(filename) or overwrite: # only do next steps if file doesn't exist
 
