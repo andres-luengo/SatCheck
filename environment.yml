@@ -16,7 +16,7 @@ dependencies:
    - ipykernel
    # Install some other dependecies
    - pip:
-     - git+https://github.com/UCBerkeleySETI/blimpy
+     - blimpy=2.0.10
      - git+https://github.com/UCBerkeleySETI/turbo_seti
      - pymysql
      - google-cloud-bigquery[bqstorage,pandas]
