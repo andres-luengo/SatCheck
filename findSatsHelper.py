@@ -21,9 +21,22 @@ see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satel
 '''
 
 def find_files(inDir, pattern):
+    '''
+    Get all h5 files in input Directory
+    inDir [str] : string of input directory
+    pattern [str] : pattern to pass to glob
+
+    return : list of h5 files to check for satellites
+    '''
     return glob.glob(inDir+pattern)
 
 def pull_relevant_header_info(filename_array):
+    '''
+    Read h5 header and pull out important info
+    filename_array [array] : array of paths to check for satellites
+
+    return : observation start time, target ra, target dec
+    '''
 
     start_time_mjd_array =[]
     right_ascension_array = []
@@ -31,8 +44,10 @@ def pull_relevant_header_info(filename_array):
 
     for every_file in filename_array:
 
+        # use blimpy to open h5 header
         wf = Waterfall(every_file, load_data=False)
 
+        # get information and append to arrays to return
         start_time_mjd = wf.header['tstart']
         right_ascension = str(wf.header['src_raj'])
         declination = str(wf.header['src_dej'])
@@ -44,11 +59,25 @@ def pull_relevant_header_info(filename_array):
     return start_time_mjd_array, right_ascension_array, declination_array
 
 def convert(mjd):
+    '''
+    Converts MJD time to isot for comparison
+    mjd [str] : mjd date
+
+    return : string start date in correct format
+    '''
     startdate = Time(mjd, format='mjd')
     string_start_date = str(Time(startdate, format='isot'))
     return string_start_date
 
 def query_space_track(fil_files, gps_ids, overwrite=False):
+    '''
+    Query space track to get TLEs
+    fil_files [list] : list of input hdf5 files
+    gps_ids [str] : comma separated string of gps ids to query for
+    overwrite [bool] : default=False, set to True to overwrite space track files
+
+    return : array of TLE filenames
+    '''
 
     print("Querying Space Track...")
     monthConversion = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -56,13 +85,18 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
 
     array_of_TLE_filenames = []
     for files in fil_files:
+
+        # get important info from hdf5 header
         wf = Waterfall(files, load_data=False)
+
+        # Format dates
         start_time_mjd = wf.header['tstart']
         mjd = Time(start_time_mjd, format='mjd')
         time_isot = Time(mjd, format='isot')
         day_change = TimeDelta(1 , format = 'jd')
         time_mjd_change = mjd + day_change
         time_isot_change = Time(time_mjd_change , format = 'isot')
+
         str_time1 = str(time_isot)
         str_time2 = str(time_isot_change)
 
@@ -78,12 +112,12 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt"
         print('Downloading TLEs to ', filename)
 
-        if not os.path.isfile(filename) or overwrite:
+        if not os.path.isfile(filename) or overwrite: # only do next steps if file doesn't exist
 
             print('######################################################################')
             print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
             print('######################################################################')
-            #array_of_TLE_filenames.append(filename)
+
             #Query space track for properly dated TLE info
             date1 = year_full_1+'-'+mon1+'-'+day1
             date2 = year_full_2+'-'+mon1+'-'+day2
@@ -99,6 +133,7 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
 
             response = requests.post('https://www.space-track.org/ajaxauth/login', data=data)
 
+            # write space track info to a file
             with open(filename, 'w+') as file:
                 file.write(response.content.decode())
 
@@ -111,16 +146,21 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
 
 
 def load_tle(filename):
-    #Loads a TLE file and creates a list of satellites
     '''
     Space Track is coming back with multiple TLEs for one satellite, with slightly different epochs
     Even when we download a TLE for that day, it comes back with two/three slightly different info
     Order satellites with ascending epoch, that way the last one we append to the dictionary
     has the most recent epoch and TLE info
+
+    filename [str] : TLE file to open
+    return : dictionary of relevant satellite information
     '''
+    # open TLE file
     f = open(filename)
     satlist = []
     satdict = {}
+
+    # read file and output each value
     l1 = f.readline()
     while l1:
         l2 = f.readline()
@@ -129,7 +169,6 @@ def load_tle(filename):
         name = sat.name
 
         identity = l3.split(' ')[1]
-        #epoch = l2.split(' ')[5].split('.')[1]
         real_sat = name.replace('0 ', '') + ' ' + identity
         satdict[real_sat] = sat
         satlist.append(sat)
@@ -139,8 +178,19 @@ def load_tle(filename):
 
     return satdict
 
-
 def separation(tle, ra_obs, dec_obs, start_time, gbt):
+    '''
+    Compute separation between satellite and target over 5 minute observation
+    tle [] : TLE information
+    ra_obs [float] : RA of observation
+    dec_obs [float] : Dec of observation
+    start_time [isot] : start time of observation
+    gbt [ephem.Observer] : observation location
+
+    return : dictionary of satellite hits
+    '''
+
+    # Format input values
     sat_hit_dict = {}
     ra_obs = ra_obs.replace('h', ':').replace('m', ':').replace('s', '')
     dec_obs = dec_obs.replace('d', ':').replace('m',':').replace('s','')
@@ -149,6 +199,7 @@ def separation(tle, ra_obs, dec_obs, start_time, gbt):
     ra_obs = ephem.hours(ra_obs)
 
     for unique_sats, satellite_object in tle.items():
+
         ra = []
         dec = []
         close_sats = []
@@ -158,8 +209,10 @@ def separation(tle, ra_obs, dec_obs, start_time, gbt):
         unique_sat_name = {}
         time = datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S.%f")
         time_after_start = 0
+
         for delta_time in range(0,300):
-            time += timedelta(seconds = 1)
+
+            time += timedelta(seconds = 1) # increment time
             time_after_start += 1
             gbt.date = time
             satellite_object.compute(gbt)
@@ -173,6 +226,7 @@ def separation(tle, ra_obs, dec_obs, start_time, gbt):
 
             if sep_deg < 3:
 
+                # get important info if the separation is less than 3 for an observation
                 ra.append(sat_ra)
                 dec.append(sat_dec)
                 close_sep.append(sep_deg)
@@ -217,6 +271,9 @@ def queryUCS():
     return outPath
 
 def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex):
+    '''
+    plots separation between satellite and target
+    '''
 
     plt.scatter(unique_sat_info['Separation'], unique_sat_info['Time after start'], s = 1, label = stored_sats_in_obs)
 
