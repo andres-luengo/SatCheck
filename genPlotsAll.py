@@ -24,7 +24,7 @@ def decryptSepName(path):
 def plotWfSep(satCsv, h5Path, memLim=20):
 
     # get target name and sat name
-    targetName, satName = decryptSepName(satCsv)
+    satName, targetName = decryptSepName(satCsv)
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
@@ -49,7 +49,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     fig.colorbar(this_plot2,cax=cax,label='Normalized Power (Arbitrary Units)')
 
     plt.show()
-    fig.savefig(f'{targetName}_wf.png', transparent=False)
+    fig.savefig(f'{targetName}_{satName.replace(' ', '_')}_wf.png', bbox_inches='tight', transparent=False)
 
     # plot separation
     df = pd.read_csv(satCsv)
@@ -69,7 +69,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     ax.scatter(minpoint, mintime, s = 50, label = 'Min: ' + str("%.5fdeg" % minpoint) + ', ' + str(mintime) + "s", color='orange')
 
     ax.legend();
-    fig.savefig(f'{targetName}_separation.png', transparent=False)
+    fig.savefig(f'{targetName}_{satName.replace(' ', '_')}_separation.png', bbox_inches='tight', transparent=False)
 
 def main():
 
