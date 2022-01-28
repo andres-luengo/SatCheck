@@ -48,7 +48,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     cax = fig.add_axes([0.94, 0.11, 0.03, 0.77])
     fig.colorbar(this_plot2,cax=cax,label='Normalized Power (Arbitrary Units)')
 
-    fig.savefig(f'{targetName}_{satName.replace(' ','_')}_wf.png', bbox_inches='tight', transparent=False)
+    fig.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
 
     # plot separation
     df = pd.read_csv(satCsv)
@@ -68,7 +68,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     ax.scatter(minpoint, mintime, s = 50, label = 'Min: ' + str("%.5fdeg" % minpoint) + ', ' + str(mintime) + "s", color='orange')
 
     ax.legend();
-    fig.savefig(f'{targetName}_{satName.replace(' ', '_')}_separation.png', bbox_inches='tight', transparent=False)
+    fig.savefig(f"{targetName}_{satName.replace(' ', '_')}_separation.png", bbox_inches='tight', transparent=False)
 
 def main():
 
