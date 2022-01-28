@@ -9,7 +9,7 @@ import argparse
 from blimpy import Waterfall
 from turbo_seti.find_event.plot_event import plot_waterfall
 
-from genPlotsAll import *
+from genPlotsAll import plotWfSep
 
 def main():
 
