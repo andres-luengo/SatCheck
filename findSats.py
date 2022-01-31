@@ -13,7 +13,7 @@ import ephem
 
 from findSatsHelper import *
 
-def findSats(dir, pattern, plot, satToCheck):
+def findSats(dir, pattern, plot):
 
     # check that end of args.dir is a /
     if not dir[-1] == '/':
@@ -25,7 +25,9 @@ def findSats(dir, pattern, plot, satToCheck):
 
     # read in the UCS Satellite Database for complete list of satellites
     df = pd.read_csv(queryUCS())
-    gps_data = df[df['Purpose'] == satToCheck]
+    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
+    toCheck = (df['Purpose'] == satsToCheck[0]) | (df['Purpose'] == satsToCheck[1]) | (df['Purpose'] == satsToCheck[2])
+    gps_data = df[toCheck]
     gps_id_list = gps_data['NORAD Number'].tolist()
 
     # get comma separated string of relevant gps_ids to get the TLEs
@@ -38,7 +40,7 @@ def findSats(dir, pattern, plot, satToCheck):
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
     # get relevant TLEs
-    tles = query_space_track(list_of_filenames, gps_ids, satToCheck)
+    tles = query_space_track(list_of_filenames, gps_ids)
 
     # Create ephem Observer object for GBT
     gbt = ephem.Observer()
@@ -52,7 +54,7 @@ def findSats(dir, pattern, plot, satToCheck):
         year = date.split("-")[0]
         mon = date.split("-")[1]
         day1 = date.split("-")[2].split('T')[0]
-        filename = months[mon] + '_' + day1 + "_" +year +'_'+satToCheck.replace('/', '-').replace(' ', '_') + "_TLEs.txt"
+        filename = months[mon] + '_' + day1 + "_" +year +"_TLEs.txt"
 
         # figure out which tle to compare to
         whichTLE = np.where(filename == tles)[0]
@@ -83,7 +85,6 @@ def findSats(dir, pattern, plot, satToCheck):
 
                 if plot:
                     plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
-
                 files_affected_by_sats[fil_file] = minpoint
 
     # Write csv file of files affected and their minimum separation
@@ -106,13 +107,7 @@ def main():
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
     args = parser.parse_args()
 
-    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
-     # 'Communications', 'Navigational/Regional Positioning',
-
-    for stc in satsToCheck:
-        print(f'Checking for: {stc}')
-        findSats(args.dir, args.pattern, args.plot, stc)
-        print()
+    findSats(args.dir, args.pattern, args.plot)
 
 if __name__ == '__main__':
     sys.exit(main())
