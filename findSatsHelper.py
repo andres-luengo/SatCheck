@@ -109,14 +109,10 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
         mon2 = str_time2.split("-")[1]
         day2 = str_time2.split("-")[2].split('T')[0]
 
-        filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt"
+        filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs.txt" 
         #print('Downloading TLEs to ', filename)
 
         if not os.path.isfile(filename) or overwrite: # only do next steps if file doesn't exist
-
-            print('######################################################################')
-            print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
-            print('######################################################################')
 
             #Query space track for properly dated TLE info
             date1 = year_full_1+'-'+mon1+'-'+day1
@@ -133,9 +129,14 @@ def query_space_track(fil_files, gps_ids, overwrite=False):
 
             response = requests.post('https://www.space-track.org/ajaxauth/login', data=data)
 
+
             # write space track info to a file
-            with open(filename, 'w+') as file:
-                file.write(response.content.decode())
+            if len(response.content.decode()) > 0:
+                print('######################################################################')
+                print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
+                print('######################################################################')
+                with open(filename, 'w+') as file:
+                    file.write(response.content.decode())
 
             time.sleep(3)
 

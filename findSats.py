@@ -13,22 +13,11 @@ import ephem
 
 from findSatsHelper import *
 
-def main():
-    '''
-    dir [str] : directory that contains h5 files to check for satellites
-                must end with a '/'
-    '''
-
-    # get input from command line user
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
-    parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
-    parser.add_argument('--plot', help='set to true to save plot of data', default=False)
-    args = parser.parse_args()
+def findSats(dir, pattern, plot):
 
     # check that end of args.dir is a /
-    if not args.dir[-1] == '/':
-        args.dir += '/'
+    if not dir[-1] == '/':
+        dir += '/'
 
     # month conversion
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -36,8 +25,9 @@ def main():
 
     # read in the UCS Satellite Database for complete list of satellites
     df = pd.read_csv(queryUCS())
-    gps = np.where(df['Purpose'] == 'Navigation/Global Positioning')[0]
-    gps_data = df.loc[gps]
+    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
+    toCheck = (df['Purpose'] == satsToCheck[0]) | (df['Purpose'] == satsToCheck[1]) | (df['Purpose'] == satsToCheck[2])
+    gps_data = df[toCheck]
     gps_id_list = gps_data['NORAD Number'].tolist()
 
     # get comma separated string of relevant gps_ids to get the TLEs
@@ -46,7 +36,7 @@ def main():
         gps_ids = gps_ids + str(i) + ','
 
     # read in necessary info from the h5 files
-    list_of_filenames = find_files(args.dir, args.pattern)
+    list_of_filenames = find_files(dir, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
     # get relevant TLEs
@@ -64,15 +54,19 @@ def main():
         year = date.split("-")[0]
         mon = date.split("-")[1]
         day1 = date.split("-")[2].split('T')[0]
-        filename = months[mon] + '_' + day1 + "_" +year + "_TLEs.txt"
+        filename = months[mon] + '_' + day1 + "_" +year +"_TLEs.txt"
 
         # figure out which tle to compare to
         whichTLE = np.where(filename == tles)[0]
         tle = tles[whichTLE][0]
 
         # calculate the separation for 5 minutes after the start of observation
-        satdict = load_tle(tle)
-        sat_hit_dict = separation(satdict, ra, dec, date, gbt)
+        if os.path.exists(filename):
+            satdict = load_tle(tle)
+            sat_hit_dict = separation(satdict, ra, dec, date, gbt)
+        else:
+            print('No satellites to crossmatch, exiting this check')
+            break
 
         if len(sat_hit_dict.keys()) > 0:
 
@@ -89,9 +83,8 @@ def main():
                 minindex = unique_sat_info['Separation'].index(minpoint)
                 mintime = unique_sat_info['Time after start'][minindex]
 
-                if args.plot:
+                if plot:
                     plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
-
                 files_affected_by_sats[fil_file] = minpoint
 
     # Write csv file of files affected and their minimum separation
@@ -101,6 +94,20 @@ def main():
     affectedFiles = pd.DataFrame(files_affected_by_sats)
     affectedFiles.to_csv(os.path.join(os.getcwd(), 'files_affected_by_sats.csv'))
 
+def main():
+    '''
+    dir [str] : directory that contains h5 files to check for satellites
+                must end with a '/'
+    '''
+
+    # get input from command line user
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
+    parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
+    parser.add_argument('--plot', help='set to true to save plot of data', default=False)
+    args = parser.parse_args()
+
+    findSats(args.dir, args.pattern, args.plot)
 
 if __name__ == '__main__':
     sys.exit(main())
