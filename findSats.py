@@ -39,7 +39,6 @@ def findSats(dir, pattern, plot, satToCheck):
 
     # get relevant TLEs
     tles = query_space_track(list_of_filenames, gps_ids, satToCheck)
-    print(tles)
 
     # Create ephem Observer object for GBT
     gbt = ephem.Observer()
@@ -53,15 +52,19 @@ def findSats(dir, pattern, plot, satToCheck):
         year = date.split("-")[0]
         mon = date.split("-")[1]
         day1 = date.split("-")[2].split('T')[0]
-        filename = months[mon] + '_' + day1 + "_" +year +'_'+satToCheck.replace('/', '-') + "_TLEs.txt"
+        filename = months[mon] + '_' + day1 + "_" +year +'_'+satToCheck.replace('/', '-').replace(' ', '_') + "_TLEs.txt"
 
         # figure out which tle to compare to
         whichTLE = np.where(filename == tles)[0]
         tle = tles[whichTLE][0]
 
         # calculate the separation for 5 minutes after the start of observation
-        satdict = load_tle(tle)
-        sat_hit_dict = separation(satdict, ra, dec, date, gbt)
+        if os.path.exists(filename):
+            satdict = load_tle(tle)
+            sat_hit_dict = separation(satdict, ra, dec, date, gbt)
+        else:
+            print('No satellites to crossmatch, exiting this check')
+            break
 
         if len(sat_hit_dict.keys()) > 0:
 
@@ -103,8 +106,8 @@ def main():
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
     args = parser.parse_args()
 
-    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Communications',
-                   'Navigational/Regional Positioning', 'Surveillance']
+    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
+     # 'Communications', 'Navigational/Regional Positioning',
 
     for stc in satsToCheck:
         print(f'Checking for: {stc}')
