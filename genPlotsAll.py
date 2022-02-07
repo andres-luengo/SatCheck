@@ -88,12 +88,9 @@ def main():
 
         h5Files = glob.glob(args.dir + '*')
 
-    goodFiles = []
-    for h5 in h5Files:
-         if h5.split('.')[-2] == '0000':
-            goodFiles.append(h5)
 
-    for csv, h5 in zip(csvs, goodFiles):
+    for csv, h5 in zip(csvs, h5Files):
+        print(f'Plotting for {h5}')
         plotWfSep(csv, h5)
 
 if __name__ == '__main__':
