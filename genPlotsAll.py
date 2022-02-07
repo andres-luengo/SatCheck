@@ -74,20 +74,24 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', help='Directory with h5 files to run on', default=None)
+    parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
+    parser.add_argument('--csvDir', help='Directory with separation csvs to run on', default=os.getcwd())
     args = parser.parse_args()
+    
+    if args.csvDir[-1] != '/':
+	args.csvDir += '/'
+    csvs = glob.glob(args.csvDir+'/*separation*0000*.csv')
 
-    csvs = glob.glob(os.getcwd()+'/*separation*0000*.csv')
-
-    if not args.dir:
+    if not args.h5Dir:
         affectedFiles = pd.read_csv('files_affected_by_sats.csv')
         h5Files = np.array(affectedFiles.columns.values.tolist()[1:])
     else:
-        if args.dir[-1] != '/':
-            args.dir += '/'
+        if args.h5Dir[-1] != '/':
+            args.h5Dir += '/'
 
-        h5Files = glob.glob(args.dir + '*')
-
+        h5Files = glob.glob(args.h5Dir + '*.h5')
+    print(csvs)
+    print(h5Files)
 
     for csv, h5 in zip(csvs, h5Files):
         print(f'Plotting for {h5}')
