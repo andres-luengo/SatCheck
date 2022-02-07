@@ -77,10 +77,11 @@ def main():
     parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
     parser.add_argument('--csvDir', help='Directory with separation csvs to run on', default=os.getcwd())
     args = parser.parse_args()
-    
+
     if args.csvDir[-1] != '/':
-	args.csvDir += '/'
-    csvs = glob.glob(args.csvDir+'/*separation*0000*.csv')
+	    args.csvDir += '/'
+
+    csvs = glob.glob(args.csvDir+'*separation*0000*.csv')
 
     if not args.h5Dir:
         affectedFiles = pd.read_csv('files_affected_by_sats.csv')
