@@ -13,7 +13,7 @@ import ephem
 
 from findSatsHelper import *
 
-def findSats(dir, pattern, plot):
+def findSats(dir, pattern, plot, key):
 
     # check that end of args.dir is a /
     if not dir[-1] == '/':
@@ -25,9 +25,15 @@ def findSats(dir, pattern, plot):
 
     # read in the UCS Satellite Database for complete list of satellites
     df = pd.read_csv(queryUCS())
-    satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
-    toCheck = (df['Purpose'] == satsToCheck[0]) | (df['Purpose'] == satsToCheck[1]) | (df['Purpose'] == satsToCheck[2])
-    gps_data = df[toCheck]
+
+    # Get data from df depending on which keys we want to check
+    if key:
+        gps_data = df[df['Purpose'] == key]
+    else:
+        satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
+        toCheck = (df['Purpose'] == satsToCheck[0]) | (df['Purpose'] == satsToCheck[1]) | (df['Purpose'] == satsToCheck[2])
+        gps_data = df[toCheck]
+
     gps_id_list = gps_data['NORAD Number'].tolist()
 
     # get comma separated string of relevant gps_ids to get the TLEs
@@ -101,13 +107,39 @@ def main():
     '''
 
     # get input from command line user
+
+    possibleKeys = ['Earth Observation', 'Technology Development', 'Communications',
+       'Earth Science', 'Space Science',
+       'Space Science/Technology Demonstration',
+       'Communications/Technology Development',
+       'Communications/Maritime Tracking', 'Technology Demonstration',
+       'Navigation/Global Positioning',
+       'Earth Observation/Technology Development', 'Signals Intelligence',
+       'Earth Observation ', 'Earth Observation/Communications',
+       'Space Observation', 'Earth/Space Observation', 'Educational',
+       'Earth Observation/Earth Science', 'Platform',
+       'Earth Observation/Space Science', 'Communications/Navigation',
+       'Surveillance', 'Navigation/Regional Positioning',
+       'Earth Observarion', 'Communication',
+       'Space Science/Technology Development',
+       'Mission Extension Technology', 'Earth Science/Earth Observation',
+       'Unknown', 'Earth Observation/Communications/Space Science',
+       'Technology Development/Educational', 'Satellite Positioning']
+
+    formattedKeys = ""
+    for k in possibleKeys:
+        formattedKeys += k+', '
+
+    msg = f"Keys corresponding to GPS satellites to search for. Default keys are: 'Navigation/Global Positioning', 'Communication', 'Surveillance'. Other options include: {formattedKeys}"
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', help='Directory with h5 files to run on', default=False)
+    parser.add_argument('--dir', help='Directory with h5 files to run on', default=os.getcwd())
     parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
+    parser.add_argument('--key', help=msg, default=None)
     args = parser.parse_args()
 
-    findSats(args.dir, args.pattern, args.plot)
+    findSats(args.dir, args.pattern, args.plot, args.key)
 
 if __name__ == '__main__':
     sys.exit(main())
