@@ -72,10 +72,21 @@ def plotWfSep(satCsv, h5Path, memLim=20):
 
 def main():
 
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', help='Directory with h5 files to run on', default=None)
+    args = parser.parse_args()
+
     csvs = glob.glob(os.getcwd()+'/*separation*0000*.csv')
 
-    affectedFiles = pd.read_csv('files_affected_by_sats.csv')
-    h5Files = np.array(affectedFiles.columns.values.tolist()[1:])
+    if not args.dir:
+        affectedFiles = pd.read_csv('files_affected_by_sats.csv')
+        h5Files = np.array(affectedFiles.columns.values.tolist()[1:])
+    else:
+        if args.dir[-1] != '/':
+            args.dir += '/'
+
+        h5Files = glob.glob(args.dir + '*')
 
     goodFiles = []
     for h5 in h5Files:
