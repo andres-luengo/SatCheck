@@ -20,7 +20,7 @@ Following 10 functions taken from Chris Murphy's satellite code
 see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 '''
 
-def find_files(inDir, pattern):
+def find_files(inDir, inFile, pattern):
     '''
     Get all h5 files in input Directory
     inDir [str] : string of input directory
@@ -28,7 +28,15 @@ def find_files(inDir, pattern):
 
     return : list of h5 files to check for satellites
     '''
-    return glob.glob(inDir+pattern)
+
+    if inDir != None:
+        toRet = glob.glob(inDir+pattern)
+    elif inFile != None:
+        toRet = np.loadtxt(inFile, dtype=str)
+    else:
+        raise IOError('Please input either a directory housing h5 files or a file with a list of h5 paths')
+
+    return toRet
 
 def pull_relevant_header_info(filename_array):
     '''

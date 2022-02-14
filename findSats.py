@@ -13,10 +13,10 @@ import ephem
 
 from findSatsHelper import *
 
-def findSats(dir, pattern, plot, key):
+def findSats(dir, file, pattern, plot, key):
 
     # check that end of args.dir is a /
-    if not dir[-1] == '/':
+    if dir != None and not dir[-1] == '/':
         dir += '/'
 
     # month conversion
@@ -42,7 +42,7 @@ def findSats(dir, pattern, plot, key):
         gps_ids = gps_ids + str(i) + ','
 
     # read in necessary info from the h5 files
-    list_of_filenames = find_files(dir, pattern)
+    list_of_filenames = find_files(dir, file, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
     # get relevant TLEs
@@ -103,7 +103,7 @@ def findSats(dir, pattern, plot, key):
     # unpack files_affected_by_sats
     forDf = {'filepath' : [], 'satellite?' : [],'minSeparation' : [], 'minTime' : []}
     for key in files_affected_by_sats:
-        
+
         forDf['filepath'].append(key) # add filename to df
 
         # check if it has satellites
@@ -152,13 +152,14 @@ def main():
     msg = f"Keys corresponding to GPS satellites to search for. Default keys are: 'Navigation/Global Positioning', 'Communication', 'Surveillance'. Other options include: {formattedKeys}"
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dir', help='Directory with h5 files to run on', default=os.getcwd())
+    parser.add_argument('--dir', help='Directory with h5 files to run on', default=None)
+    parser.add_argument('--file', help='File with list of h5 files to run on. If no dir is provided, will use this file', default=None)
     parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
     parser.add_argument('--key', help=msg, default=None)
     args = parser.parse_args()
 
-    findSats(args.dir, args.pattern, args.plot, args.key)
+    findSats(args.dir, args.file,  args.pattern, args.plot, args.key)
 
 if __name__ == '__main__':
     sys.exit(main())
