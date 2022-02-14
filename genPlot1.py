@@ -21,7 +21,7 @@ def main():
     csvs = glob.glob(args.dir+'/*separation*0000*.csv')
 
     affectedFiles = pd.read_csv(args.dir+'/files_affected_by_sats.csv')
-    h5Files = np.array(affectedFiles.columns.values.tolist()[1:])
+    h5Files = np.array(affectedFiles['filepath'])
 
     h5Path = None
     csvPath = None

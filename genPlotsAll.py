@@ -85,7 +85,7 @@ def main():
 
     if not args.h5Dir:
         affectedFiles = pd.read_csv('files_affected_by_sats.csv')
-        h5Files = np.array(affectedFiles.columns.values.tolist()[1:])
+        h5Files = np.array(affectedFiles['filepath'])
     else:
         if args.h5Dir[-1] != '/':
             args.h5Dir += '/'
