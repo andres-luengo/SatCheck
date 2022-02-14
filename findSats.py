@@ -103,8 +103,7 @@ def findSats(dir, pattern, plot, key):
     # unpack files_affected_by_sats
     forDf = {'filepath' : [], 'satellite?' : [],'minSeparation' : [], 'minTime' : []}
     for key in files_affected_by_sats:
-        #files_affected_by_sats[key] = [files_affected_by_sats[key]]
-        print(key)
+        
         forDf['filepath'].append(key) # add filename to df
 
         # check if it has satellites
