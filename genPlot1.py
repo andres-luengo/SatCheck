@@ -22,6 +22,7 @@ def main():
 
     affectedFiles = pd.read_csv(args.dir+'/files_affected_by_sats.csv')
     h5Files = np.array(affectedFiles['filepath'])
+    h5Files = h5Files[affectedFiles['satellite?'] == True]
 
     h5Path = None
     csvPath = None
