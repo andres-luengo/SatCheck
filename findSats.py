@@ -3,7 +3,7 @@ Modified from Chris Murphy's Satellite code
 see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 '''
 
-import sys
+import os, sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,7 +13,57 @@ import ephem
 
 from findSatsHelper import *
 
-def findSats(dir, file, pattern, plot, key):
+def io(n):
+
+    # read in the UCS Satellite Database for complete list of satellites
+    df = pd.read_csv(queryUCS())
+
+    idList = np.array(df['NORAD Number'].tolist())
+
+    return np.array_split(idList, n)
+
+def downloadTLEs(list_of_filenames, n):
+
+    noradIds = io(n)
+
+    # get relevant TLEs
+    allTLEfiles = []
+    for idx, nIds in enumerate(noradIds):
+        # get comma separated string of relevant ids to get the TLEs
+        ids = ''
+        for i in nIds:
+            ids = ids + str(i) + ','
+        tles = query_space_track(list_of_filenames, ids, idx)
+        allTLEfiles.append(tles)
+
+    # rewrite all TLEs ase unique files
+    baseNames = []
+    for lis in allTLEfiles:
+        for f in lis:
+            baseNames.append(f[:-6])
+    baseNames = np.unique(np.array(baseNames))
+
+    sepTLEs = {}
+    for name in baseNames:
+        for lis in allTLEfiles:
+            for f in lis:
+                if f[:-6] == name:
+                    if name in sepTLEs:
+                        sepTLEs[name].append(f)
+                    else:
+                        sepTLEs[name] = [f]
+
+    for key in sepTLEs.keys():
+        with open(f"{name}.txt", "wb") as outfile:
+            for f in sepTLEs[key]:
+                with open(f, "rb") as infile:
+                    outfile.write(infile.read())
+
+                os.remove(f)
+
+    return np.array([name+'.txt' for name in baseNames])
+
+def findSats(dir, file, pattern, plot, n):
 
     # check that end of args.dir is a /
     if dir != None and not dir[-1] == '/':
@@ -23,30 +73,11 @@ def findSats(dir, file, pattern, plot, key):
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
                   "07":"jul","08":"aug","09":"sep","10":"oct","11":"nov", "12":"dec"}
 
-    # read in the UCS Satellite Database for complete list of satellites
-    df = pd.read_csv(queryUCS())
-
-    # Get data from df depending on which keys we want to check
-    if key:
-        gps_data = df[df['Purpose'] == key]
-    else:
-        satsToCheck = ['Navigation/Global Positioning', 'Communication', 'Surveillance']
-        toCheck = (df['Purpose'] == satsToCheck[0]) | (df['Purpose'] == satsToCheck[1]) | (df['Purpose'] == satsToCheck[2])
-        gps_data = df[toCheck]
-
-    gps_id_list = gps_data['NORAD Number'].tolist()
-
-    # get comma separated string of relevant gps_ids to get the TLEs
-    gps_ids = ''
-    for i in gps_id_list:
-        gps_ids = gps_ids + str(i) + ','
-
     # read in necessary info from the h5 files
     list_of_filenames = find_files(dir, file, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
-    # get relevant TLEs
-    tles = query_space_track(list_of_filenames, gps_ids)
+    tles = downloadTLEs(list_of_filenames, n)
 
     # Create ephem Observer object for GBT
     gbt = ephem.Observer()
@@ -57,7 +88,7 @@ def findSats(dir, file, pattern, plot, key):
     files_affected_by_sats = {}
     for (fil_file, ra, dec, dd) in zip(list_of_filenames, ra_lst, dec_lst, start_time_mjd):
 
-        files_affected_by_sats[fil_file] = []
+        files_affected_by_sats[fil_file] = [[],[]]
 
         date = convert(dd)
         year = date.split("-")[0]
@@ -67,10 +98,10 @@ def findSats(dir, file, pattern, plot, key):
 
         # figure out which tle to compare to
         whichTLE = np.where(filename == tles)[0]
-        tle = tles[whichTLE][0]
 
         # calculate the separation for 5 minutes after the start of observation
         if os.path.exists(filename):
+            tle = tles[whichTLE][0]
             satdict = load_tle(tle)
             sat_hit_dict = separation(satdict, ra, dec, date, gbt)
         else:
@@ -83,9 +114,12 @@ def findSats(dir, file, pattern, plot, key):
             for stored_sats_in_obs, unique_sat_info in sat_hit_dict.items():
 
                 outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
-                print('Writing to: ', outname)
-                separationData = pd.DataFrame(unique_sat_info)
-                separationData.to_csv(outname)
+
+                if not os.path.exists(outname):
+
+                    print('Writing to: ', outname)
+                    separationData = pd.DataFrame(unique_sat_info)
+                    separationData.to_csv(outname)
 
                 minpoint = min(unique_sat_info['Separation'])
 
@@ -95,8 +129,8 @@ def findSats(dir, file, pattern, plot, key):
                 if plot:
                     plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
 
-                files_affected_by_sats[fil_file].append(minpoint)
-                files_affected_by_sats[fil_file].append(mintime)
+                files_affected_by_sats[fil_file][0].append(minpoint)
+                files_affected_by_sats[fil_file][1].append(mintime)
 
     # Write csv file of files affected and their minimum separation and time
 
@@ -117,7 +151,7 @@ def findSats(dir, file, pattern, plot, key):
             forDf['minTime'].append(files_affected_by_sats[key][1])
 
     affectedFiles = pd.DataFrame(forDf)
-    affectedFiles.to_csv(os.path.join(os.getcwd(), 'files_affected_by_sats.csv'))
+    return affectedFiles
 
 def main():
     '''
@@ -125,41 +159,21 @@ def main():
                 must end with a '/'
     '''
 
-    # get input from command line user
-
-    possibleKeys = ['Earth Observation', 'Technology Development', 'Communications',
-       'Earth Science', 'Space Science',
-       'Space Science/Technology Demonstration',
-       'Communications/Technology Development',
-       'Communications/Maritime Tracking', 'Technology Demonstration',
-       'Navigation/Global Positioning',
-       'Earth Observation/Technology Development', 'Signals Intelligence',
-       'Earth Observation ', 'Earth Observation/Communications',
-       'Space Observation', 'Earth/Space Observation', 'Educational',
-       'Earth Observation/Earth Science', 'Platform',
-       'Earth Observation/Space Science', 'Communications/Navigation',
-       'Surveillance', 'Navigation/Regional Positioning',
-       'Earth Observarion', 'Communication',
-       'Space Science/Technology Development',
-       'Mission Extension Technology', 'Earth Science/Earth Observation',
-       'Unknown', 'Earth Observation/Communications/Space Science',
-       'Technology Development/Educational', 'Satellite Positioning']
-
-    formattedKeys = ""
-    for k in possibleKeys:
-        formattedKeys += k+', '
-
-    msg = f"Keys corresponding to GPS satellites to search for. Default keys are: 'Navigation/Global Positioning', 'Communication', 'Surveillance'. Other options include: {formattedKeys}"
+    #msg = f"Keys corresponding to GPS satellites to search for. Default keys are: 'Navigation/Global Positioning', 'Communication', 'Surveillance'. Other options include: {formattedKeys}"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', help='Directory with h5 files to run on', default=None)
     parser.add_argument('--file', help='File with list of h5 files to run on. If no dir is provided, will use this file', default=None)
     parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
-    parser.add_argument('--key', help=msg, default=None)
+    parser.add_argument('--n', help='higher n will be more inefficient', default=10)
     args = parser.parse_args()
 
-    findSats(args.dir, args.file,  args.pattern, args.plot, args.key)
+
+    af = findSats(args.dir, args.file,  args.pattern, args.plot, args.n)
+    affectedFiles = af.loc[af['minTime'] != 'N/A']#.drop_duplicates()
+    affectedFiles.to_csv(os.path.join(os.getcwd(), 'files_affected_by_sats.csv'))
+
 
 if __name__ == '__main__':
     sys.exit(main())
