@@ -29,7 +29,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
 
-    plot_f, plot_data = wf.grab_data()
+    '''plot_f, plot_data = wf.grab_data()
 
     extent=(plot_f[-1], plot_f[0], 0.0, (wf.timestamps[-1]-wf.timestamps[0])*24.*60.*60)
 
@@ -48,7 +48,11 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     cax = fig.add_axes([0.94, 0.11, 0.03, 0.77])
     fig.colorbar(this_plot2,cax=cax,label='Normalized Power (Arbitrary Units)')
 
-    fig.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
+    fig.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)'''
+
+    plt.figure()
+    wf.plot_all()
+    plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
 
     # plot separation
     df = pd.read_csv(satCsv)
