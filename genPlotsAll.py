@@ -50,7 +50,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
 
     fig.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)'''
 
-    plt.figure()
+    plt.figure(figsize=(13, 10))
     wf.plot_all()
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
 
