@@ -54,12 +54,13 @@ def downloadTLEs(list_of_filenames, n):
                         sepTLEs[name] = [f]
 
     for key in sepTLEs.keys():
-        with open(f"{name}.txt", "wb") as outfile:
+        with open(f"{key}.txt", "wb") as outfile:
             for f in sepTLEs[key]:
-                with open(f, "rb") as infile:
-                    outfile.write(infile.read())
+                if os.path.exists(f):
+                    with open(f, "rb") as infile:
+                        outfile.write(infile.read())
 
-                os.remove(f)
+                    os.remove(f)
 
     return np.array([name+'.txt' for name in baseNames])
 
