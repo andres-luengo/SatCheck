@@ -146,7 +146,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False):
                 with open(filename, 'w+') as file:
                     file.write(response.content.decode())
 
-            time.sleep(3)
+            time.sleep(5)
 
         if filename not in array_of_TLE_filenames:
             array_of_TLE_filenames.append(filename)
