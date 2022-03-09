@@ -59,7 +59,7 @@ def plotWfSep(satCsv, h5Path, memLim=20):
         raise Exception("No band found for this file")
 
     plt.figure(figsize=(19.5, 15))
-    wf.plot_all(f_start=b*10**3, f_stop=b*10**3)
+    wf.plot_all(f_start=b[0]*10**3, f_stop=b[1]*10**3)
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
 
     # plot separation
