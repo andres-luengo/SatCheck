@@ -23,13 +23,13 @@ def band(file, tol=0.7):
     dirMinf = maxf - np.abs(hdr['foff']*hdr['nchans'])*10**-3
 
     if abs(dirMinf-L[0]) < tol and abs(dirMaxf-L[1]) < tol:
-        return 'L'
+        return L
     elif abs(dirMinf-S[0]) < tol and abs(dirMaxf-S[1]) < tol:
-        return 'S'
+        return S
     elif abs(dirMinf-C[0]) < tol and abs(dirMaxf-C[1]) < tol:
-        return 'C'
+        return C
     elif abs(dirMinf-X[0]) < tol and abs(dirMaxf-X[1]) < tol:
-        return 'X'
+        return X
     else:
         return 'NA'
 
@@ -55,9 +55,11 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     wf = Waterfall(h5Path, max_load=memLim)
 
     b = band(h5Path)
+    if type(b) == str:
+        raise Exception("No band found for this file")
 
     plt.figure(figsize=(19.5, 15))
-    wf.plot_all()
+    wf.plot_all(f_start=b*10**3, f_stop=b*10**3)
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
 
     # plot separation
