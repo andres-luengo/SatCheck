@@ -29,27 +29,6 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
 
-    '''plot_f, plot_data = wf.grab_data()
-
-    extent=(plot_f[-1], plot_f[0], 0.0, (wf.timestamps[-1]-wf.timestamps[0])*24.*60.*60)
-
-    fig, ax = plt.subplots(figsize=(8,10))
-
-    this_plot = plot_waterfall(wf, targetName)
-
-    data = np.flipud(np.fliplr(np.array(this_plot.get_array())))
-
-    this_plot2 = plt.imshow(data,
-            aspect='auto',
-            rasterized=True,
-            interpolation='nearest',
-            extent=extent)
-
-    cax = fig.add_axes([0.94, 0.11, 0.03, 0.77])
-    fig.colorbar(this_plot2,cax=cax,label='Normalized Power (Arbitrary Units)')
-
-    fig.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)'''
-
     plt.figure(figsize=(19.5, 15))
     wf.plot_all()
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
@@ -80,6 +59,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
     parser.add_argument('--csvDir', help='Directory with separation csvs to run on', default=os.getcwd())
+    parser.add_argument('--memLim', help='Memory limit for reading in the h5 files', default=20)
     args = parser.parse_args()
 
     if args.csvDir[-1] != '/':
@@ -101,7 +81,7 @@ def main():
 
     for csv, h5 in zip(csvs, h5Files):
         print(f'Plotting for {h5}')
-        plotWfSep(csv, h5)
+        plotWfSep(csv, h5, memLim=args.memLim)
 
 if __name__ == '__main__':
     sys.exit(main())
