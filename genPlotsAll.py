@@ -7,6 +7,31 @@ import pandas as pd
 
 from blimpy import Waterfall
 from turbo_seti.find_event.plot_event import plot_waterfall
+from blimpy.io.hdf_reader import H5Reader
+
+def band(file, tol=0.7):
+
+    L = [1.10, 1.90]
+    S = [1.80, 2.80]
+    C = [4.00, 7.80]
+    X = [7.80, 11.20]
+
+    h5 = H5Reader(file, load_data=False)
+    hdr = h5.read_header()
+
+    dirMaxf = hdr['fch1'] * 10**-3
+    dirMinf = maxf - np.abs(hdr['foff']*hdr['nchans'])*10**-3
+
+    if abs(dirMinf-L[0]) < tol and abs(dirMaxf-L[1]) < tol:
+        return 'L'
+    elif abs(dirMinf-S[0]) < tol and abs(dirMaxf-S[1]) < tol:
+        return 'S'
+    elif abs(dirMinf-C[0]) < tol and abs(dirMaxf-C[1]) < tol:
+        return 'C'
+    elif abs(dirMinf-X[0]) < tol and abs(dirMaxf-X[1]) < tol:
+        return 'X'
+    else:
+        return 'NA'
 
 def decryptSepName(path):
 
@@ -28,6 +53,8 @@ def plotWfSep(satCsv, h5Path, memLim=20):
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
+
+    b = band(h5Path)
 
     plt.figure(figsize=(19.5, 15))
     wf.plot_all()
