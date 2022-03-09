@@ -114,7 +114,7 @@ def findSats(dir, file, pattern, plot, n):
             # write information to output files
             for stored_sats_in_obs, unique_sat_info in sat_hit_dict.items():
 
-                outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
+                outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-').replace('/', '-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
 
                 if not os.path.exists(outname):
 
