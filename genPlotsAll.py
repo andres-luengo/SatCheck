@@ -20,7 +20,7 @@ def band(file, tol=0.7):
     hdr = h5.read_header()
 
     dirMaxf = hdr['fch1'] * 10**-3
-    dirMinf = maxf - np.abs(hdr['foff']*hdr['nchans'])*10**-3
+    dirMinf = dirMaxf - np.abs(hdr['foff']*hdr['nchans'])*10**-3
 
     if abs(dirMinf-L[0]) < tol and abs(dirMaxf-L[1]) < tol:
         return L
