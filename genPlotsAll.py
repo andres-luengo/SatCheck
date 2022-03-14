@@ -9,6 +9,9 @@ from blimpy import Waterfall
 from turbo_seti.find_event.plot_event import plot_waterfall
 from blimpy.io.hdf_reader import H5Reader
 
+import matplotlib as mpl
+mpl.rcParams['agg.path.chunksize'] = 100
+
 def band(file, tol=0.7):
 
     L = [1.10, 1.90]
