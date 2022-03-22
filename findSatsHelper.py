@@ -131,7 +131,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False):
             #Using only active sats
             data = [
             ('identity', 'noahfranz13junk@gmail.com'),
-            ('password', 'HelloNoah12345!'),
+            ('password', os.environ['SPACETRACK_PASS']),
             ('query', 'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/'+date1+'--'+date2+'/NORAD_CAT_ID/'+gps_ids+'/orderby/TLE_LINE1 ASC/format/3le'),
             ]
 
