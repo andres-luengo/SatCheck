@@ -89,7 +89,7 @@ def findSats(dir, file, pattern, plot, n):
     files_affected_by_sats = {}
     for (fil_file, ra, dec, dd) in zip(list_of_filenames, ra_lst, dec_lst, start_time_mjd):
 
-        files_affected_by_sats[fil_file] = [[],[]]
+        files_affected_by_sats[fil_file] = [[],[],[]]
 
         date = convert(dd)
         year = date.split("-")[0]
@@ -132,11 +132,12 @@ def findSats(dir, file, pattern, plot, n):
 
                 files_affected_by_sats[fil_file][0].append(minpoint)
                 files_affected_by_sats[fil_file][1].append(mintime)
+                files_affected_by_sats[fil_file][2].append(outname)
 
     # Write csv file of files affected and their minimum separation and time
 
     # unpack files_affected_by_sats
-    forDf = {'filepath' : [], 'satellite?' : [],'minSeparation' : [], 'minTime' : []}
+    forDf = {'filepath' : [], 'satellite?' : [],'minSeparation' : [], 'minTime' : [], 'csvPaths' : []}
     for key in files_affected_by_sats:
 
         forDf['filepath'].append(key) # add filename to df
@@ -146,10 +147,12 @@ def findSats(dir, file, pattern, plot, n):
             forDf['satellite?'].append(False)
             forDf['minSeparation'].append('N/A')
             forDf['minTime'].append('N/A')
+            forDf['csvPaths'].append('N/A')
         else:
             forDf['satellite?'].append(True)
             forDf['minSeparation'].append(files_affected_by_sats[key][0])
             forDf['minTime'].append(files_affected_by_sats[key][1])
+            forDf['csvPaths'].append(files_affected_by_sats[key][2])
 
     affectedFiles = pd.DataFrame(forDf)
     return affectedFiles

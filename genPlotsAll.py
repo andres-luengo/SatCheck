@@ -49,7 +49,10 @@ def decryptSepName(path):
 
     return newSat, target
 
-def plotH5(h5Path, memLim=20):
+def plotH5(satCsv, h5Path, memLim=20):
+
+    # get target name and sat name
+    satName, targetName = decryptSepName(satCsv)
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
