@@ -55,7 +55,7 @@ def plotH5(satCsv, h5Path, memLim=20):
     sats = []
     for csv in satCsv:
         satName, targetName = decryptSepName(satCsv)
-        sats.append(satName)
+        sats.append(satName.lstrip('_').rstrip('_'))
 
     sats = np.unique(np.array(sats))
     satName = ""
