@@ -51,13 +51,18 @@ def decryptSepName(path):
 
 def plotH5(satCsv, h5Path, memLim=20):
 
-    # get target name and sat name
-    sats = ""
+    # get target name and sat names
+    sats = []
     for csv in satCsv:
         satName, targetName = decryptSepName(satCsv)
-        sats += satName + ", "
+        sats.append(satName)
 
-    satName = sats[:-2]
+    sats = np.unique(np.array(sats))
+    satName = ""
+    for sat in sats:
+        satName += sat + ", "
+
+    satName = satName[:-2]
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
