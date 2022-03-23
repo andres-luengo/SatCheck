@@ -105,7 +105,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
-    parser.add_argument('--memLim', help='Memory limit for reading in the h5 files', default=20)
+    parser.add_argument('--memLim', help='Memory limit for reading in the h5 files', default=40)
     args = parser.parse_args()
 
     affectedFiles = pd.read_csv('files_affected_by_sats.csv')
