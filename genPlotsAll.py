@@ -52,7 +52,12 @@ def decryptSepName(path):
 def plotH5(satCsv, h5Path, memLim=20):
 
     # get target name and sat name
-    satName, targetName = decryptSepName(satCsv)
+    sats = ""
+    for csv in satCsv:
+        satName, targetName = decryptSepName(satCsv)
+        sats += satName + ", "
+
+    satName = sats[:-2]
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
@@ -112,7 +117,7 @@ def main():
 
     for csvList, h5 in zip(csvs, h5Files):
         print(f'Plotting for {h5}')
-        plotH5(csv, h5, memLim=args.memLim)
+        plotH5(csvList, h5, memLim=args.memLim)
         for csv in csvList:
             plotSep(csv)
 
