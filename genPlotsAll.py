@@ -114,20 +114,11 @@ def main():
             args.h5Dir += '/'
         h5Files = glob.glob(args.h5Dir + '*.h5')
 
-    print(csvs)
-    print(h5Files)
-
     for csvList, h5 in zip(csvs, h5):
         print(f'Plotting for {h5}')
         plotH5(csv, h5, memLim=args.memLim)
         for csv in csvList:
             plotSep(csv)
-
-    for h5 in h5Files:
-
-
-    for csv in csvs:
-        print(f'Plotting for {csv}')
 
 
 if __name__ == '__main__':
