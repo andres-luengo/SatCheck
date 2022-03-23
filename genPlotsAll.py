@@ -1,5 +1,5 @@
 #imports
-import os, sys, glob
+import os, sys, glob, ast
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -120,7 +120,7 @@ def main():
             args.h5Dir += '/'
         h5Files = glob.glob(args.h5Dir + '*.h5')
 
-    for csvList, h5 in zip(csvs, h5Files):
+    for csvList, h5 in zip(ast.literal_eval(csvs), h5Files):
         print(f'Plotting for {h5}')
         plotH5(csvList, h5, memLim=args.memLim)
         for csv in csvList:
