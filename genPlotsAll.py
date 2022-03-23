@@ -95,34 +95,40 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
-    parser.add_argument('--csvDir', help='Directory with separation csvs to run on', default=os.getcwd())
+    #parser.add_argument('--csvDir', help='Directory with separation csvs to run on', default=os.getcwd())
     parser.add_argument('--memLim', help='Memory limit for reading in the h5 files', default=20)
     args = parser.parse_args()
 
     if args.csvDir[-1] != '/':
 	    args.csvDir += '/'
 
-    csvs = glob.glob(args.csvDir+'*separation*0000*.csv')
+    affectedFiles = pd.read_csv('files_affected_by_sats.csv')
+
+    csvs = np.array(affectedFiles['csvPaths'])
 
     if not args.h5Dir:
-        affectedFiles = pd.read_csv('files_affected_by_sats.csv')
         h5Files = np.array(affectedFiles['filepath'])
         h5Files = h5Files[affectedFiles['satellite?'] == True]
     else:
         if args.h5Dir[-1] != '/':
             args.h5Dir += '/'
-
         h5Files = glob.glob(args.h5Dir + '*.h5')
+
     print(csvs)
     print(h5Files)
 
-    for h5 in h5Files:
+    for csvList, h5 in zip(csvs, h5):
         print(f'Plotting for {h5}')
-        plotH5(h5, memLim=args.memLim)
+        plotH5(csv, h5, memLim=args.memLim)
+        for csv in csvList:
+            plotSep(csv)
+
+    for h5 in h5Files:
+
 
     for csv in csvs:
         print(f'Plotting for {csv}')
-        plotSep(csv)
+
 
 if __name__ == '__main__':
     sys.exit(main())
