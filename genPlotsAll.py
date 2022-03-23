@@ -110,7 +110,7 @@ def main():
 
     affectedFiles = pd.read_csv('files_affected_by_sats.csv')
 
-    csvs = np.array(affectedFiles['csvPaths'])
+    csvs = np.array([ast.literal_eval(x) for x in affectedFiles['csvPaths']])
 
     if not args.h5Dir:
         h5Files = np.array(affectedFiles['filepath'])
@@ -120,7 +120,7 @@ def main():
             args.h5Dir += '/'
         h5Files = glob.glob(args.h5Dir + '*.h5')
 
-    for csvList, h5 in zip(ast.literal_eval(csvs), h5Files):
+    for csvList, h5 in zip(csvs, h5Files):
         print(f'Plotting for {h5}')
         plotH5(csvList, h5, memLim=args.memLim)
         for csv in csvList:
