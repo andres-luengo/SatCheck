@@ -49,10 +49,7 @@ def decryptSepName(path):
 
     return newSat, target
 
-def plotWfSep(satCsv, h5Path, memLim=20):
-
-    # get target name and sat name
-    satName, targetName = decryptSepName(satCsv)
+def plotH5(h5Path, memLim=20):
 
     # plot waterfall
     wf = Waterfall(h5Path, max_load=memLim)
@@ -64,6 +61,11 @@ def plotWfSep(satCsv, h5Path, memLim=20):
     plt.figure(figsize=(19.5, 15))
     wf.plot_all(f_start=b[0]*10**3, f_stop=b[1]*10**3)
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
+
+def plotSep(satCsv):
+
+    # get target name and sat name
+    satName, targetName = decryptSepName(satCsv)
 
     # plot separation
     df = pd.read_csv(satCsv)
@@ -111,9 +113,13 @@ def main():
     print(csvs)
     print(h5Files)
 
-    for csv, h5 in zip(csvs, h5Files):
+    for h5 in h5Files:
         print(f'Plotting for {h5}')
-        plotWfSep(csv, h5, memLim=args.memLim)
+        plotH5(h5, memLim=args.memLim)
+
+    for csv in csvs:
+        print(f'Plotting for {csv}')
+        plotSep(csv)
 
 if __name__ == '__main__':
     sys.exit(main())
