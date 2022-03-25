@@ -74,7 +74,7 @@ def plotH5(satCsv, h5Path, memLim=20):
     plt.figure(figsize=(19.5, 15))
     wf.plot_all(f_start=b[0]*10**3, f_stop=b[1]*10**3)
     plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
-    plt.close(fig)
+    plt.close()
 
 def plotSep(satCsv):
 
