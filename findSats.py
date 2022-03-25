@@ -12,6 +12,7 @@ import argparse
 import ephem
 
 from findSatsHelper import *
+from genPlotsAll import plotSep
 
 def io(n):
 
@@ -128,7 +129,8 @@ def findSats(dir, file, pattern, plot, n):
                 mintime = unique_sat_info['Time after start'][minindex]
 
                 if plot:
-                    plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
+                    plotSep(outname)
+                    #plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
 
                 files_affected_by_sats[fil_file][0].append(minpoint)
                 files_affected_by_sats[fil_file][1].append(mintime)
