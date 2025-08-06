@@ -133,18 +133,23 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
         mon = date.split("-")[1]
         day1 = date.split("-")[2].split('T')[0]
         filename = months[mon] + '_' + day1 + "_" +year +"_TLEs.txt"
+        
+        # Construct full path for filename matching
+        full_filename = os.path.join(work_dir, filename)
 
         # figure out which tle to compare to
-        whichTLE = np.where(filename == tles)[0]
+        whichTLE = np.where(full_filename == tles)[0]
 
         # calculate the separation for 5 minutes after the start of observation
-        if os.path.exists(filename):
+        if len(whichTLE) > 0 and os.path.exists(full_filename):
             tle = tles[whichTLE][0]
             satdict = load_tle(tle)
             sat_hit_dict = separation(satdict, ra, dec, date, gbt)
         else:
-            print('No satellites to crossmatch, exiting this check')
-            break
+            print(f'No satellites to crossmatch for {filename}, skipping this observation')
+            print(f'Expected file: {full_filename}')
+            print(f'Available TLE files: {[os.path.basename(t) for t in tles[:5]]}...')  # Show first 5 for debugging
+            continue
 
         if len(sat_hit_dict.keys()) > 0:
 
