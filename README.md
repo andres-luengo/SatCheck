@@ -46,15 +46,16 @@ satcheck.plotH5(["satellite_csv1.csv"], "observation.h5")
 After installation, you can also use the command-line tools:
 
 ### `findSats` Usage
-You must add the password for spacetrack queries to your .bashrc file using the following steps in a bash terminal
+You must add the username and password for spacetrack queries to your .bashrc file using the following steps in a bash terminal
 ```
 sudo nano ~/.bashrc
 ```
 Then add to the bottom the line
 ```
+export SPACETRACK_ACCT="{Username}"
 export SPACETRACK_PASS="{Password}"
 ```
-where you replace {Password} with your password. Then exit nano and type
+where you replace {Username} with your username (your email, by default) and {Password} with your password. Then exit nano and type
 ```
 source ~/.bashrc
 ```

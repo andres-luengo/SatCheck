@@ -132,7 +132,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False):
             #Ascending epoch. Dictionary will append most recent epoch
             #Using only active sats
             data = [
-            ('identity', 'noahfranz13junk@gmail.com'),
+            ('identity', os.environ.get('SPACETRACK_ACCT', 'noahfranz13junk@gmail.com')),
             ('password', os.environ['SPACETRACK_PASS']),
             ('query', 'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/'+date1+'--'+date2+'/NORAD_CAT_ID/'+gps_ids+'/orderby/TLE_LINE1 ASC/format/3le'),
             ]
