@@ -144,7 +144,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
 
             #Query space track for properly dated TLE info
             date1 = year_full_1+'-'+mon1+'-'+day1
-            date2 = year_full_2+'-'+mon1+'-'+day2
+            date2 = year_full_2+'-'+mon2+'-'+day2
 
             # Create a session for proper authentication
             session = requests.Session()
@@ -160,20 +160,37 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
                 login_response = session.post('https://www.space-track.org/ajaxauth/login', data=login_data)
                 
                 if login_response.status_code == 200:
+                    # Check if login was actually successful by examining response
+                    if 'Failed' in login_response.text or 'Login' in login_response.text:
+                        print(f"Authentication failed for Space-Track.org. Login response indicates failure.")
+                        continue
+                        
                     # Now make the query using the authenticated session
+                    # Format: class/tle for Two-Line Elements
                     query_url = f'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/{date1}--{date2}/NORAD_CAT_ID/{gps_ids}/orderby/TLE_LINE1 ASC/format/3le'
+                    
+                    print(f"Debug: Query URL: {query_url}")  # Debug output
                     
                     response = session.get(query_url)
                     
                     # Check if we got actual TLE data (not error messages)
                     response_text = response.content.decode('utf-8', errors='ignore')
                     
+                    # Debug output
+                    print(f"Debug: Response status: {response.status_code}")
+                    print(f"Debug: Response length: {len(response_text)}")
+                    print(f"Debug: Querying {len(gps_ids.split(','))} satellites for date range {date1} to {date2}")
+                    if len(response_text) < 500:  # Print short responses for debugging
+                        print(f"Debug: Response content preview: {response_text[:200]}")
+                    
                     # Skip if response contains error messages or is empty
                     if (response.status_code == 200 and 
                         len(response_text.strip()) > 0 and 
                         'deprecated' not in response_text.lower() and
                         'error' not in response_text.lower() and
-                        not response_text.strip().startswith('"')):
+                        'unauthorized' not in response_text.lower() and
+                        not response_text.strip().startswith('"') and
+                        not response_text.strip().startswith('No records found')):
                         
                         print('######################################################################')
                         print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
@@ -184,8 +201,35 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
                     else:
                         print(f"Warning: No valid TLE data received for {filename}")
                         print(f"Response status: {response.status_code}")
-                        if len(response_text) < 200:  # Only print short responses
+                        if response.status_code == 204:
+                            print("HTTP 204 means the query was valid but returned no data.")
+                            print("This typically happens when:")
+                            print("  - Satellites didn't exist during the requested time period")
+                            print("  - SpaceTrack doesn't have historical TLE data for these satellites")
+                            print("  - The date range is too specific for historical queries")
+                        
+                        # Don't try alternative query for 204 responses - they indicate no data available
+                        if response.status_code != 204 and len(response_text) < 500:
                             print(f"Response content: {response_text}")
+                        
+                        # Only try alternative query if it's not a clear "no data" response
+                        if response.status_code != 204 and (len(response_text.strip()) == 0 or response.status_code != 200):
+                            print(f"Trying alternative query format for historical data...")
+                            # Try querying with a broader time range or different approach
+                            alt_query_url = f'https://www.space-track.org/basicspacedata/query/class/tle_latest/NORAD_CAT_ID/{gps_ids}/orderby/TLE_LINE1 ASC/format/3le'
+                            print(f"Debug: Alternative query URL: {alt_query_url}")
+                            
+                            alt_response = session.get(alt_query_url)
+                            alt_response_text = alt_response.content.decode('utf-8', errors='ignore')
+                            
+                            if (alt_response.status_code == 200 and 
+                                len(alt_response_text.strip()) > 0 and
+                                'deprecated' not in alt_response_text.lower() and
+                                'error' not in alt_response_text.lower()):
+                                
+                                print(f"Alternative query succeeded, but data may not match exact date range.")
+                                with open(filename, 'w+') as file:
+                                    file.write(alt_response_text)
                 else:
                     print(f"Authentication failed for Space-Track.org. Status code: {login_response.status_code}")
                     

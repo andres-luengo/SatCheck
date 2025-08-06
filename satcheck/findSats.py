@@ -15,12 +15,35 @@ from .findSatsHelper import *
 from .genPlotsAll import plotSep
 
 def io(n, work_dir=None):
-
+    """
+    Get NORAD IDs from UCS database, filtered for satellites likely to have historical data
+    """
     # read in the UCS Satellite Database for complete list of satellites
     df = pd.read_csv(queryUCS(work_dir=work_dir))
-
+    
+    # Filter out satellites that are unlikely to have historical TLE data
+    # Remove rows with missing/invalid NORAD numbers
+    df = df.dropna(subset=['NORAD Number'])
+    df = df[df['NORAD Number'] > 0]
+    
+    # If there's a launch date column, filter for satellites launched before 2021
+    # This helps reduce queries for very recent satellites when looking for 2020 data
+    if 'Date of Launch' in df.columns:
+        try:
+            df['Launch_Year'] = pd.to_datetime(df['Date of Launch'], errors='coerce').dt.year
+            df = df[(df['Launch_Year'].isna()) | (df['Launch_Year'] <= 2021)]
+            print(f"Filtered to {len(df)} satellites launched before 2022 (or unknown launch date)")
+        except:
+            print("Could not filter by launch date, using all satellites")
+    
     idList = np.array(df['NORAD Number'].tolist())
-
+    
+    # Remove any invalid IDs (NaN, negative, etc.)
+    idList = idList[~pd.isna(idList)]
+    idList = idList[idList > 0]
+    
+    print(f"Total satellite IDs to query: {len(idList)}")
+    
     return np.array_split(idList, n)
 
 def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_password=None, work_dir=None):
@@ -31,9 +54,7 @@ def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_passw
     allTLEfiles = []
     for idx, nIds in enumerate(noradIds):
         # get comma separated string of relevant ids to get the TLEs
-        ids = ''
-        for i in nIds:
-            ids = ids + str(i) + ','
+        ids = ','.join(str(i) for i in nIds)  # Remove trailing comma
         tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account=spacetrack_account, spacetrack_password=spacetrack_password, work_dir=work_dir)
         allTLEfiles.append(tles)
 
