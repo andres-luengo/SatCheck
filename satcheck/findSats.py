@@ -23,7 +23,7 @@ def io(n):
 
     return np.array_split(idList, n)
 
-def downloadTLEs(list_of_filenames, n):
+def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_password=None):
 
     noradIds = io(n)
 
@@ -34,7 +34,7 @@ def downloadTLEs(list_of_filenames, n):
         ids = ''
         for i in nIds:
             ids = ids + str(i) + ','
-        tles = query_space_track(list_of_filenames, ids, idx)
+        tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account, spacetrack_password)
         allTLEfiles.append(tles)
 
     # rewrite all TLEs ase unique files
@@ -65,7 +65,7 @@ def downloadTLEs(list_of_filenames, n):
 
     return np.array([name+'.txt' for name in baseNames])
 
-def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list=None):
+def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list=None, spacetrack_account=None, spacetrack_password=None):
 
     # check that end of args.dir is a /
     if dir != None and not dir[-1] == '/':
@@ -79,7 +79,7 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
     list_of_filenames = find_files(dir, file, file_list, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
-    tles = downloadTLEs(list_of_filenames, n)
+    tles = downloadTLEs(list_of_filenames, n, spacetrack_account, spacetrack_password)
 
     # Create ephem Observer object for GBT
     gbt = ephem.Observer()

@@ -79,7 +79,7 @@ def convert(mjd):
     string_start_date = str(Time(startdate, format='isot'))
     return string_start_date
 
-def query_space_track(fil_files, gps_ids, idx, overwrite=False):
+def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_account=None, spacetrack_password=None):
     '''
     Query space track to get TLEs
     fil_files [list] : list of input hdf5 files
@@ -88,6 +88,16 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False):
 
     return : array of TLE filenames
     '''
+
+    if spacetrack_account is None:
+        spacetrack_account = os.environ.get('SPACETRACK_ACCT')
+    if spacetrack_account is None:
+        raise ValueError('spacetrack_account must be passed in or environmental variable SPACETRACK_ACCT must be defined.')
+    
+    if spacetrack_password is None:
+        spacetrack_password = os.environ.get('SPACETRACK_PASS')
+    if spacetrack_password is None:
+        raise ValueError('spacetrack_password must be passed in or environmental variable SPACETRACK_PASS must be defined.')
 
     print("Querying Space Track...")
     monthConversion = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -132,8 +142,8 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False):
             #Ascending epoch. Dictionary will append most recent epoch
             #Using only active sats
             data = [
-            ('identity', os.environ.get('SPACETRACK_ACCT', 'noahfranz13junk@gmail.com')),
-            ('password', os.environ['SPACETRACK_PASS']),
+            ('identity', spacetrack_account), # os.environ.get('SPACETRACK_ACCT', 'noahfranz13junk@gmail.com')
+            ('password', spacetrack_password),
             ('query', 'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/'+date1+'--'+date2+'/NORAD_CAT_ID/'+gps_ids+'/orderby/TLE_LINE1 ASC/format/3le'),
             ]
 
