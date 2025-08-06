@@ -52,7 +52,7 @@ sudo nano ~/.bashrc
 ```
 Then add to the bottom the line
 ```
-export SAPECTRACK_PASS="{Password}"
+export SPACETRACK_PASS="{Password}"
 ```
 where you replace {Password} with your password. Then exit nano and type
 ```
