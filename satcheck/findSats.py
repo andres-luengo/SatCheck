@@ -65,7 +65,7 @@ def downloadTLEs(list_of_filenames, n):
 
     return np.array([name+'.txt' for name in baseNames])
 
-def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10):
+def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list=None):
 
     # check that end of args.dir is a /
     if dir != None and not dir[-1] == '/':
@@ -76,7 +76,7 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10):
                   "07":"jul","08":"aug","09":"sep","10":"oct","11":"nov", "12":"dec"}
 
     # read in necessary info from the h5 files
-    list_of_filenames = find_files(dir, file, pattern)
+    list_of_filenames = find_files(dir, file, file_list, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
     tles = downloadTLEs(list_of_filenames, n)
