@@ -2,7 +2,50 @@
 
 Repo with some code to look for satellites in Breakthrough Listen Data. Modified from: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satellites.py
 
-## Setup to run findSats
+## Installation
+
+To install this package for use in other projects:
+
+```bash
+pip install .
+```
+
+Or for development:
+
+```bash
+pip install -e .
+```
+
+## Package Usage
+
+After installation, you can use satcheck in your Python projects:
+
+```python
+import satcheck
+
+# Use the main satellite finding function
+affected_files = satcheck.findSats(
+    dir="/path/to/h5/files/",
+    file=None,
+    pattern="*.h5", 
+    plot=False,
+    n=10
+)
+
+# Use helper functions
+h5_files = satcheck.find_files("/path/to/h5/files/", None, "*.h5")
+start_times, ra_list, dec_list = satcheck.pull_relevant_header_info(h5_files)
+
+# Use plotting functions
+satcheck.plotSep("path/to/separation.csv")
+satcheck.plotH5(["satellite_csv1.csv"], "observation.h5")
+```
+
+## Command Line Usage
+
+After installation, you can also use the command-line tools:
+
+### `findSats` Usage
 You must add the password for spacetrack queries to your .bashrc file using the following steps in a bash terminal
 ```
 sudo nano ~/.bashrc
@@ -16,7 +59,7 @@ where you replace {Password} with your password. Then exit nano and type
 source ~/.bashrc
 ```
 
-## `findSats.py` Usage
+### Setup for Space Track queries
 `findSats` is a program that allows the user to search for satellites that cross
 the observation. It checks across date/time and sky location but does not check
 frequency since the downlink frequency of most satellites is unknown. This means

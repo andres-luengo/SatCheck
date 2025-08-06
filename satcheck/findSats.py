@@ -11,8 +11,8 @@ import argparse
 
 import ephem
 
-from findSatsHelper import *
-from genPlotsAll import plotSep
+from .findSatsHelper import *
+from .genPlotsAll import plotSep
 
 def io(n):
 
