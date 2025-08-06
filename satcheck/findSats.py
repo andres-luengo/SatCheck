@@ -14,18 +14,18 @@ import ephem
 from .findSatsHelper import *
 from .genPlotsAll import plotSep
 
-def io(n):
+def io(n, work_dir=None):
 
     # read in the UCS Satellite Database for complete list of satellites
-    df = pd.read_csv(queryUCS())
+    df = pd.read_csv(queryUCS(work_dir=work_dir))
 
     idList = np.array(df['NORAD Number'].tolist())
 
     return np.array_split(idList, n)
 
-def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_password=None):
+def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_password=None, work_dir=None):
 
-    noradIds = io(n)
+    noradIds = io(n, work_dir=work_dir)
 
     # get relevant TLEs
     allTLEfiles = []
@@ -34,7 +34,7 @@ def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_passw
         ids = ''
         for i in nIds:
             ids = ids + str(i) + ','
-        tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account=spacetrack_account, spacetrack_password=spacetrack_password)
+        tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account=spacetrack_account, spacetrack_password=spacetrack_password, work_dir=work_dir)
         allTLEfiles.append(tles)
 
     # rewrite all TLEs ase unique files
@@ -54,8 +54,16 @@ def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_passw
                     else:
                         sepTLEs[name] = [f]
 
+    # Set work directory, default to current working directory  
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
+
     for key in sepTLEs.keys():
-        with open(f"{key}.txt", "wb") as outfile:
+        combined_file_path = os.path.join(work_dir, f"{key}.txt")
+        with open(combined_file_path, "wb") as outfile:
             for f in sepTLEs[key]:
                 if os.path.exists(f):
                     with open(f, "rb") as infile:
@@ -63,13 +71,20 @@ def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_passw
 
                     os.remove(f)
 
-    return np.array([name+'.txt' for name in baseNames])
+    return np.array([os.path.join(work_dir, name+'.txt') for name in baseNames])
 
-def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list=None, spacetrack_account=None, spacetrack_password=None):
+def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list=None, spacetrack_account=None, spacetrack_password=None, work_dir=None):
 
     # check that end of args.dir is a /
     if dir != None and not dir[-1] == '/':
         dir += '/'
+
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
 
     # month conversion
     months = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
@@ -79,7 +94,7 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
     list_of_filenames = find_files(dir, file, file_list, pattern)
     start_time_mjd, ra_lst, dec_lst = pull_relevant_header_info(list_of_filenames)
 
-    tles = downloadTLEs(list_of_filenames, n, spacetrack_account, spacetrack_password)
+    tles = downloadTLEs(list_of_filenames, n, spacetrack_account, spacetrack_password, work_dir=work_dir)
 
     # Create ephem Observer object for GBT
     gbt = ephem.Observer()
@@ -115,7 +130,7 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
             # write information to output files
             for stored_sats_in_obs, unique_sat_info in sat_hit_dict.items():
 
-                outname = os.path.join(os.getcwd(), stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-').replace('/', '-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
+                outname = os.path.join(work_dir, stored_sats_in_obs.replace(' ','_').replace('(','-').replace(')','-').replace('/', '-')+'_separation_'+fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]).replace('h5', 'csv')
 
                 if not os.path.exists(outname):
 
@@ -129,8 +144,8 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
                 mintime = unique_sat_info['Time after start'][minindex]
 
                 if plot:
-                    plotSep(outname)
-                    #plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex)
+                    plotSep(outname, work_dir=work_dir)
+                    #plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex, work_dir=work_dir)
 
                 files_affected_by_sats[fil_file][0].append(minpoint)
                 files_affected_by_sats[fil_file][1].append(mintime)
@@ -157,6 +172,12 @@ def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10, /, file_list
             forDf['csvPaths'].append(files_affected_by_sats[key][2])
 
     affectedFiles = pd.DataFrame(forDf)
+    
+    # Save the summary file to the work directory
+    summary_file_path = os.path.join(work_dir, 'files_affected_by_sats.csv')
+    affectedFiles.to_csv(summary_file_path)
+    print(f"Summary saved to: {summary_file_path}")
+    
     return affectedFiles
 
 def main():
@@ -173,12 +194,18 @@ def main():
     parser.add_argument('--pattern', help='input pattern to glob', default='*.h5')
     parser.add_argument('--plot', help='set to true to save plot of data', default=False)
     parser.add_argument('--n', help='higher n will be more inefficient', default=10)
+    parser.add_argument('--work_dir', help='directory to store output files, defaults to current working directory', default=None)
     args = parser.parse_args()
 
 
-    af = findSats(args.dir, args.file,  args.pattern, args.plot, args.n)
+    af = findSats(args.dir, args.file,  args.pattern, args.plot, args.n, work_dir=args.work_dir)
     affectedFiles = af.loc[af['minTime'] != 'N/A']#.drop_duplicates()
-    affectedFiles.to_csv(os.path.join(os.getcwd(), 'files_affected_by_sats.csv'))
+    
+    # Set work directory for final output, default to current working directory
+    work_dir = args.work_dir if args.work_dir else os.getcwd()
+    os.makedirs(work_dir, exist_ok=True)
+    final_output_path = os.path.join(work_dir, 'files_affected_by_sats.csv')
+    affectedFiles.to_csv(final_output_path)
 
 
 if __name__ == '__main__':

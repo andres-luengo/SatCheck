@@ -49,7 +49,14 @@ def decryptSepName(path):
 
     return newSat, target
 
-def plotH5(satCsv, h5Path, memLim=20):
+def plotH5(satCsv, h5Path, memLim=20, work_dir=None):
+
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
 
     # get target name and sat names
     sats = []
@@ -73,10 +80,18 @@ def plotH5(satCsv, h5Path, memLim=20):
 
     plt.figure(figsize=(19.5, 15))
     wf.plot_all(f_start=b[0]*10**3, f_stop=b[1]*10**3)
-    plt.savefig(f"{targetName}_{satName.replace(' ','_')}_wf.png", bbox_inches='tight', transparent=False)
+    plot_path = os.path.join(work_dir, f"{targetName}_{satName.replace(' ','_')}_wf.png")
+    plt.savefig(plot_path, bbox_inches='tight', transparent=False)
     plt.close()
 
-def plotSep(satCsv):
+def plotSep(satCsv, work_dir=None):
+
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
 
     # get target name and sat name
     satName, targetName = decryptSepName(satCsv)
@@ -99,7 +114,8 @@ def plotSep(satCsv):
     ax.scatter(minpoint, mintime, s = 50, label = 'Min: ' + str("%.5fdeg" % minpoint) + ', ' + str(mintime) + "s", color='orange')
 
     ax.legend();
-    fig.savefig(f"{targetName}_{satName.replace(' ', '_')}_separation.png", bbox_inches='tight', transparent=False)
+    plot_path = os.path.join(work_dir, f"{targetName}_{satName.replace(' ', '_')}_separation.png")
+    fig.savefig(plot_path, bbox_inches='tight', transparent=False)
     plt.close(fig)
 
 def main():
@@ -108,9 +124,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--h5Dir', help='Directory with h5 files to run on', default=None)
     parser.add_argument('--memLim', help='Memory limit for reading in the h5 files', default=40)
+    parser.add_argument('--work_dir', help='directory to store output files, defaults to current working directory', default=None)
     args = parser.parse_args()
 
-    affectedFiles = pd.read_csv('files_affected_by_sats.csv')
+    # Set work directory, default to current working directory
+    work_dir = args.work_dir if args.work_dir else os.getcwd()
+    os.makedirs(work_dir, exist_ok=True)
+
+    affectedFiles = pd.read_csv(os.path.join(work_dir, 'files_affected_by_sats.csv'))
 
     csvs = np.array([ast.literal_eval(x) for x in affectedFiles['csvPaths']])
 
@@ -124,9 +145,9 @@ def main():
 
     for csvList, h5 in zip(csvs, h5Files):
         print(f'Plotting for {h5}')
-        plotH5(csvList, h5, memLim=args.memLim)
+        plotH5(csvList, h5, memLim=args.memLim, work_dir=work_dir)
         for csv in csvList:
-            plotSep(csv)
+            plotSep(csv, work_dir=work_dir)
 
 
 if __name__ == '__main__':

@@ -29,7 +29,8 @@ affected_files = satcheck.findSats(
     file=None,
     pattern="*.h5", 
     plot=False,
-    n=10
+    n=10,
+    work_dir="/path/to/output/directory"  # Optional: specify where to store output files
 )
 
 # Use helper functions
@@ -75,10 +76,16 @@ To use `findSats` in the command line there are a few different options:
 * pattern -> If an input directory is used, this pattern will be used in glob to limit files to run on. An example would be if you only wanted files ending in 0000.h5 you could input `*0000.h5`. The default is simply all h5 files (*.h5).
 * plot -> Boolean (True or False). If True plots of the separation will be generated. Default is set to False. This just implements a function in the genPlotsAll code.
 * n -> Do not change this input value unless you know what you're doing!! This changes the number of partitions of the list with NORAD numbers and affects the query speed of Space Track. The default is set to 10 and should not be set any lower.
+* work_dir -> Optional directory to store all output files (TLE files, CSV files, plots, etc.). If not specified, files will be saved in the current working directory. This is useful for server environments with restricted storage policies.
 
 Note that either a directory of h5 files (`dir`) should be provided or a file with a list of h5 files (`file`). An example call would be
 ```
-python3 ~/SatCheck/genPlotsAll.py --file list_of_cadences.txt
+python3 ~/SatCheck/satcheck/findSats.py --file list_of_cadences.txt --work_dir /path/to/output/directory
+```
+
+Or with default current directory:
+```
+python3 ~/SatCheck/satcheck/findSats.py --file list_of_cadences.txt
 ```
 
 ## `genPlotsAll.py` Usage
@@ -86,13 +93,14 @@ python3 ~/SatCheck/genPlotsAll.py --file list_of_cadences.txt
 
 * h5Dir -> the directory with hdf5 files to run on. This is an optional argument as long as genPlotsAll is being run in the same directory as the `files_affected_by_sats.csv` file outputted by `find_sats`.
 * memLim -> the memory limit to implement when creating the h5 waterfall plots. Default is 40 GB, may need to be raised for larger X band files.
+* work_dir -> Optional directory where output files are stored and where to look for the `files_affected_by_sats.csv` file. Defaults to current working directory.
 
 Example usage when running in same directory as the files_affected_by_sats.csv file:
 ```
-python3 ~/SatCheck/genPlotsAll.py
+python3 ~/SatCheck/satcheck/genPlotsAll.py --work_dir /path/to/output/directory
 ```
 
 Example usage when there is a separate directory of h5 files:
 ```
-python3 ~/SatCheck/genPlotsAll.py --h5Dir path/to/h5Dir
+python3 ~/SatCheck/satcheck/genPlotsAll.py --h5Dir path/to/h5Dir --work_dir /path/to/output/directory
 ```

@@ -79,12 +79,13 @@ def convert(mjd):
     string_start_date = str(Time(startdate, format='isot'))
     return string_start_date
 
-def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_account=None, spacetrack_password=None):
+def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_account=None, spacetrack_password=None, work_dir=None):
     '''
     Query space track to get TLEs
     fil_files [list] : list of input hdf5 files
     gps_ids [str] : comma separated string of gps ids to query for
     overwrite [bool] : default=False, set to True to overwrite space track files
+    work_dir [str] : directory to store TLE files, defaults to current working directory
 
     return : array of TLE filenames
     '''
@@ -102,6 +103,13 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
     print("Querying Space Track...")
     monthConversion = {"01":"jan", "02":"feb","03":"mar","04":"apr","05":"may","06":"jun",
                   "07":"jul","08":"aug","09":"sep","10":"oct","11":"nov", "12":"dec"}
+
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
 
     array_of_TLE_filenames = []
     for files in fil_files:
@@ -129,7 +137,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
         mon2 = str_time2.split("-")[1]
         day2 = str_time2.split("-")[2].split('T')[0]
 
-        filename = monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs_" + str(idx) + ".txt"
+        filename = os.path.join(work_dir, monthConversion[mon1] + "_" + day1 + '_' + year_full_1 + "_TLEs_" + str(idx) + ".txt")
         #print('Downloading TLEs to ', filename)
 
         if not os.path.isfile(filename) or overwrite: # only do next steps if file doesn't exist
@@ -268,17 +276,25 @@ def separation(tle, ra_obs, dec_obs, start_time, gbt):
 Now the rest of these functions I wrote
 '''
 
-def queryUCS():
+def queryUCS(work_dir=None):
     '''
     Queries the UCS Satellite Database and downloads the most up to date file info
+    work_dir [str] : directory to store database file, defaults to current working directory
 
     returns : path to the downloaded file
     '''
 
     print('Downloading newest UCS Satellite Database File')
 
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
+
     url = 'https://www.ucsusa.org/sites/default/files/2021-11/UCS-Satellite-Database-9-1-2021.txt'
-    outPath = os.path.join(os.getcwd(), 'UCS-Satellite-Database.txt')
+    outPath = os.path.join(work_dir, 'UCS-Satellite-Database.txt')
 
     req = urllib.request.Request(url, headers={'User-Agent' : 'Mozilla/5.0'})
     ucsData = urllib.request.urlopen(req).read()
@@ -291,10 +307,18 @@ def queryUCS():
 
     return outPath
 
-def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex):
+def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex, work_dir=None):
     '''
     plots separation between satellite and target
+    work_dir [str] : directory to save plot files, defaults to current working directory
     '''
+
+    # Set work directory, default to current working directory
+    if work_dir is None:
+        work_dir = os.getcwd()
+    
+    # Ensure work_dir exists
+    os.makedirs(work_dir, exist_ok=True)
 
     plt.scatter(unique_sat_info['Separation'], unique_sat_info['Time after start'], s = 1, label = stored_sats_in_obs)
 
@@ -317,4 +341,5 @@ def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpo
     plot_name = fil_file.split('_')[-2] + '_' + fil_file.split('_')[-1]
     plt.title(plot_name)
     plt.legend()
-    plt.savefig(plot_name + '_time_sep_.png', transparent=False)
+    plot_file_path = os.path.join(work_dir, plot_name + '_time_sep_.png')
+    plt.savefig(plot_file_path, transparent=False)
