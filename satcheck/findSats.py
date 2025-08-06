@@ -65,7 +65,7 @@ def downloadTLEs(list_of_filenames, n):
 
     return np.array([name+'.txt' for name in baseNames])
 
-def findSats(dir, file, pattern, plot, n):
+def findSats(dir=None, file=None, pattern='*.h5', plot=False, n=10):
 
     # check that end of args.dir is a /
     if dir != None and not dir[-1] == '/':
