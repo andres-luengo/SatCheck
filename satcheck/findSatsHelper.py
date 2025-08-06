@@ -21,13 +21,56 @@ see: https://github.com/stevecroft/bl-interns/blob/master/chrismurphy/find_satel
 '''
 
 def find_files(inDir, inFile, fileList, pattern):
-    '''
-    Get all h5 files in input Directory
-    inDir [str] : string of input directory
-    pattern [str] : pattern to pass to glob
-
-    return : list of h5 files to check for satellites
-    '''
+    """
+    Get list of HDF5 files to analyze from various input sources.
+    
+    This function provides flexible input handling for specifying which observation
+    files to process. It accepts either a directory to search, a file containing
+    a list of paths, or a direct list of file paths.
+    
+    Parameters
+    ----------
+    inDir : str or None
+        Directory path to search for files using glob pattern.
+        Should end with '/' for consistency.
+    inFile : str or None  
+        Path to text file containing list of HDF5 file paths, one per line.
+    fileList : list of str or None
+        Direct list of HDF5 file paths to process.
+    pattern : str
+        Glob pattern for finding files in inDir (e.g., '*.h5', '*0000.h5').
+        
+    Returns
+    -------
+    list or numpy.ndarray
+        List of HDF5 file paths to analyze for satellite interference.
+        
+    Raises
+    ------
+    IOError
+        If none of the input parameters (inDir, inFile, fileList) are provided.
+        
+    Notes
+    -----
+    Parameters are mutually exclusive - only one should be provided:
+    - inDir: Search directory with glob pattern
+    - inFile: Read file list from text file  
+    - fileList: Use provided list directly
+    
+    Examples
+    --------
+    Search directory for all HDF5 files:
+    
+    >>> files = find_files("/data/obs/", None, None, "*.h5")
+    
+    Load file list from text file:
+    
+    >>> files = find_files(None, "file_list.txt", None, None)
+    
+    Use direct file list:
+    
+    >>> files = find_files(None, None, ["obs1.h5", "obs2.h5"], None)
+    """
 
     if inDir is not None:
         toRet = glob.glob(inDir+pattern)
@@ -41,12 +84,41 @@ def find_files(inDir, inFile, fileList, pattern):
     return toRet
 
 def pull_relevant_header_info(filename_array):
-    '''
-    Read h5 header and pull out important info
-    filename_array [array] : array of paths to check for satellites
-
-    return : observation start time, target ra, target dec
-    '''
+    """
+    Extract observation parameters from HDF5 file headers.
+    
+    This function reads essential observation metadata from Breakthrough Listen
+    HDF5 files, including observation start times and target coordinates.
+    These parameters are needed for satellite interference calculations.
+    
+    Parameters
+    ----------
+    filename_array : list of str
+        List of paths to HDF5 observation files to process.
+        
+    Returns
+    -------
+    tuple of (list, list, list)
+        Three lists containing:
+        - start_time_mjd_array : Modified Julian Date start times for each observation
+        - right_ascension_array : Right ascension coordinates (J2000) as strings  
+        - declination_array : Declination coordinates (J2000) as strings
+        
+    Notes
+    -----
+    - Uses blimpy library to read HDF5 headers without loading data
+    - Coordinates are extracted in the format used by the observation system
+    - Start times are in Modified Julian Date (MJD) format
+    - Header fields read: 'tstart', 'src_raj', 'src_dej'
+    
+    Examples
+    --------
+    Extract info from observation files:
+    
+    >>> files = ["obs1.h5", "obs2.h5"]
+    >>> times, ra_list, dec_list = pull_relevant_header_info(files)
+    >>> print(f"First observation: RA={ra_list[0]}, Dec={dec_list[0]}")
+    """
 
     start_time_mjd_array =[]
     right_ascension_array = []
@@ -69,26 +141,97 @@ def pull_relevant_header_info(filename_array):
     return start_time_mjd_array, right_ascension_array, declination_array
 
 def convert(mjd):
-    '''
-    Converts MJD time to isot for comparison
-    mjd [str] : mjd date
-
-    return : string start date in correct format
-    '''
+    """
+    Convert Modified Julian Date to ISO format string.
+    
+    This function converts observation timestamps from Modified Julian Date (MJD)
+    format to ISO 8601 format for compatibility with satellite orbital calculations
+    and TLE queries.
+    
+    Parameters
+    ----------
+    mjd : float
+        Modified Julian Date timestamp from observation header.
+        
+    Returns
+    -------
+    str
+        ISO 8601 formatted date-time string (YYYY-MM-DDTHH:MM:SS.ffffff).
+        
+    Notes
+    -----
+    Uses astropy.time.Time for accurate astronomical time conversions.
+    The output format is compatible with ephem library calculations.
+    
+    Examples
+    --------
+    Convert MJD to ISO format:
+    
+    >>> iso_time = convert(58849.5)
+    >>> print(iso_time)  # "2020-01-15T12:00:00.000"
+    """
     startdate = Time(mjd, format='mjd')
     string_start_date = str(Time(startdate, format='isot'))
     return string_start_date
 
 def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_account=None, spacetrack_password=None, work_dir=None):
-    '''
-    Query space track to get TLEs
-    fil_files [list] : list of input hdf5 files
-    gps_ids [str] : comma separated string of gps ids to query for
-    overwrite [bool] : default=False, set to True to overwrite space track files
-    work_dir [str] : directory to store TLE files, defaults to current working directory
-
-    return : array of TLE filenames
-    '''
+    """
+    Download Two-Line Element (TLE) data from Space-Track.org for specific satellites and dates.
+    
+    This function queries the Space-Track.org database to download historical TLE data
+    for specified satellites during the time periods of radio astronomy observations.
+    It handles authentication, rate limiting, and error handling for the Space-Track API.
+    
+    Parameters
+    ----------
+    fil_files : list of str
+        List of HDF5 observation file paths. Observation dates from these files
+        determine the TLE query date ranges.
+    gps_ids : str
+        Comma-separated string of NORAD catalog IDs for satellites to query.
+        Example: "12345,67890,54321"
+    idx : int
+        Index number for output filename uniqueness when processing multiple batches.
+    overwrite : bool, default=False
+        Whether to overwrite existing TLE files. If False, skips download if file exists.
+    spacetrack_account : str, optional
+        Space-Track.org account username (typically email address).
+        If None, uses SPACETRACK_ACCT environment variable.
+    spacetrack_password : str, optional
+        Space-Track.org account password.
+        If None, uses SPACETRACK_PASS environment variable.
+    work_dir : str, optional
+        Directory to save TLE files. If None, uses current working directory.
+        
+    Returns
+    -------
+    numpy.ndarray
+        Array of file paths to downloaded TLE files, one per unique observation date.
+        
+    Raises
+    ------
+    ValueError
+        If Space-Track.org credentials are not provided via parameters or environment variables.
+        
+    Notes
+    -----
+    - Requires valid Space-Track.org account (free registration required)
+    - Implements 12-second delays between queries to respect API rate limits
+    - Downloads TLEs for observation date ±1 day to ensure coverage
+    - Files are named: {month}_{day}_{year}_TLEs_{idx}.txt
+    - Handles various API response codes and error conditions gracefully
+    - Falls back to latest TLE queries if historical data is unavailable
+    
+    Examples
+    --------
+    Query TLEs for specific satellites:
+    
+    >>> files = ["obs_2020_01_15.h5"]
+    >>> satellite_ids = "25544,20580,27424"  # ISS, GPS satellites
+    >>> tle_files = query_space_track(files, satellite_ids, 0, 
+    ...                              spacetrack_account="user@email.com",
+    ...                              spacetrack_password="password")
+    """
 
     if spacetrack_account is None:
         spacetrack_account = os.environ.get('SPACETRACK_ACCT')
@@ -247,15 +390,48 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
 
 
 def load_tle(filename):
-    '''
-    Space Track is coming back with multiple TLEs for one satellite, with slightly different epochs
-    Even when we download a TLE for that day, it comes back with two/three slightly different info
-    Order satellites with ascending epoch, that way the last one we append to the dictionary
-    has the most recent epoch and TLE info
-
-    filename [str] : TLE file to open
-    return : dictionary of relevant satellite information
-    '''
+    """
+    Parse Two-Line Element (TLE) data from Space-Track.org files into satellite objects.
+    
+    This function reads TLE files downloaded from Space-Track.org and converts them
+    into PyEphem satellite objects for orbital calculations. It handles multiple TLEs
+    per satellite and selects the most recent epoch for each satellite.
+    
+    Parameters
+    ----------
+    filename : str
+        Path to TLE file downloaded from Space-Track.org.
+        File should contain TLE data in standard 3-line format.
+        
+    Returns
+    -------
+    dict
+        Dictionary mapping satellite names to PyEphem satellite objects.
+        Keys are satellite names with catalog IDs, values are ephem.EarthSatellite objects.
+        Returns empty dict if file is missing, empty, or contains errors.
+        
+    Notes
+    -----
+    - TLE format: 3 lines per satellite (name, line1, line2)
+    - Handles multiple TLEs per satellite by keeping the most recent epoch
+    - Filters out invalid TLE entries and error responses from Space-Track
+    - Satellite names are formatted as "NAME CATALOG_ID" for uniqueness
+    - Uses PyEphem library for satellite object creation and orbital calculations
+    
+    Examples
+    --------
+    Load satellites from TLE file:
+    
+    >>> satellites = load_tle("jan_15_2020_TLEs.txt")
+    >>> print(f"Loaded {len(satellites)} satellites")
+    >>> for name, sat in satellites.items():
+    ...     print(f"Satellite: {name}")
+    
+    Check if specific satellite is loaded:
+    
+    >>> if "ISS (ZARYA) 25544" in satellites:
+    ...     iss = satellites["ISS (ZARYA) 25544"]
+    """
     # Check if file exists and has content
     if not os.path.exists(filename):
         print(f"Warning: TLE file {filename} does not exist")
@@ -320,16 +496,57 @@ def load_tle(filename):
     return satdict
 
 def separation(tle, ra_obs, dec_obs, start_time, gbt):
-    '''
-    Compute separation between satellite and target over 5 minute observation
-    tle [] : TLE information
-    ra_obs [float] : RA of observation
-    dec_obs [float] : Dec of observation
-    start_time [isot] : start time of observation
-    gbt [ephem.Observer] : observation location
-
-    return : dictionary of satellite hits
-    '''
+    """
+    Calculate angular separation between satellites and observation target over time.
+    
+    This function computes the angular separation between each satellite and the
+    observation target coordinates for a 5-minute observation period. It identifies
+    satellites that pass within 3 degrees of the target as potential interference sources.
+    
+    Parameters
+    ----------
+    tle : dict
+        Dictionary of satellite objects from load_tle(), mapping names to ephem satellites.
+    ra_obs : str
+        Right ascension of observation target in format "XXhYYmZZs" (hours, minutes, seconds).
+    dec_obs : str  
+        Declination of observation target in format "±XXdYYmZZs" (degrees, minutes, seconds).
+    start_time : str
+        Observation start time in ISO format "YYYY-MM-DDTHH:MM:SS.fff".
+    gbt : ephem.Observer
+        PyEphem observer object representing the observation site location.
+        
+    Returns
+    -------
+    dict
+        Dictionary mapping satellite names to separation data for satellites that
+        pass within 3 degrees of the target. Each entry contains:
+        - 'RA': List of satellite RA positions during close approaches
+        - 'DEC': List of satellite declination positions  
+        - 'Separation': List of angular separations in degrees
+        - 'Time after start': List of time offsets in seconds from observation start
+        
+    Notes
+    -----
+    - Analyzes 300 seconds (5 minutes) of satellite motion at 1-second intervals
+    - Only includes satellites that come within 3 degrees of the target
+    - Uses PyEphem for accurate satellite position calculations
+    - Observer location affects satellite visibility and positions
+    - Angular separations calculated using great circle distance
+    
+    Examples
+    --------
+    Calculate separations for loaded satellites:
+    
+    >>> satellites = load_tle("tle_file.txt")
+    >>> gbt = ephem.Observer()
+    >>> gbt.long, gbt.lat = "-79.839857", "38.432987"  # Green Bank
+    >>> close_sats = separation(satellites, "12h30m45s", "+41d16m09s", 
+    ...                        "2020-01-15T14:30:00.000", gbt)
+    >>> for sat_name, data in close_sats.items():
+    ...     min_sep = min(data['Separation'])
+    ...     print(f"{sat_name}: minimum separation {min_sep:.3f} degrees")
+    """
 
     # Format input values
     sat_hit_dict = {}
@@ -389,12 +606,48 @@ Now the rest of these functions I wrote
 '''
 
 def queryUCS(work_dir=None):
-    '''
-    Queries the UCS Satellite Database and downloads the most up to date file info
-    work_dir [str] : directory to store database file, defaults to current working directory
-
-    returns : path to the downloaded file
-    '''
+    """
+    Download the Union of Concerned Scientists (UCS) Satellite Database.
+    
+    This function downloads the most recent UCS Satellite Database, which contains
+    comprehensive information about active satellites including NORAD catalog numbers,
+    launch dates, and satellite classifications. This database is used as the source
+    for satellite IDs to query from Space-Track.org.
+    
+    Parameters
+    ----------
+    work_dir : str, optional
+        Directory to save the downloaded database file.
+        If None, uses current working directory.
+        
+    Returns
+    -------
+    str
+        Path to the downloaded and processed CSV database file.
+        
+    Notes
+    -----
+    - Downloads from UCS website (https://www.ucsusa.org)
+    - Converts original tab-separated format to CSV for easier processing
+    - File is saved as 'UCS-Satellite-Database.txt' in the work directory
+    - Database includes satellites from various countries and organizations
+    - Used as master catalog for satellite ID queries to Space-Track.org
+    - Database is typically updated annually by UCS
+    
+    Examples
+    --------
+    Download UCS database to current directory:
+    
+    >>> db_path = queryUCS()
+    >>> print(f"Database saved to: {db_path}")
+    
+    Download to specific directory:
+    
+    >>> db_path = queryUCS(work_dir="/data/satellite_db/")
+    >>> import pandas as pd
+    >>> satellites = pd.read_csv(db_path)
+    >>> print(f"Database contains {len(satellites)} satellites")
+    """
 
     print('Downloading newest UCS Satellite Database File')
 
@@ -420,10 +673,51 @@ def queryUCS(work_dir=None):
     return outPath
 
 def plotSeparation(unique_sat_info, stored_sats_in_obs, fil_file, mintime, minpoint, minindex, work_dir=None):
-    '''
-    plots separation between satellite and target
-    work_dir [str] : directory to save plot files, defaults to current working directory
-    '''
+    """
+    Generate a scatter plot of satellite angular separation vs. time.
+    
+    This function creates a visualization showing how the angular separation between
+    a satellite and the observation target changes over the 5-minute observation window.
+    The plot highlights the minimum separation point for easy identification.
+    
+    Parameters
+    ----------
+    unique_sat_info : dict
+        Dictionary containing satellite separation data with keys:
+        - 'Separation': List of angular separations in degrees
+        - 'Time after start': List of time offsets in seconds
+    stored_sats_in_obs : str
+        Name of the satellite for plot labeling.
+    fil_file : str
+        Name of the observation file for plot title generation.
+    mintime : float
+        Time (seconds after start) when minimum separation occurred.
+    minpoint : float
+        Minimum angular separation value in degrees.
+    minindex : int
+        Index in the data arrays where minimum separation occurred.
+    work_dir : str, optional
+        Directory to save the plot file. If None, uses current working directory.
+        
+    Notes
+    -----
+    - Creates scatter plot with separation on x-axis, time on y-axis
+    - Highlights minimum separation point with special marker and annotation
+    - Plot limits: time 0-300 seconds, separation 0-3 degrees
+    - Saves as PNG file with name based on observation file
+    - Uses matplotlib for plotting and figure generation
+    
+    Examples
+    --------
+    Plot separation data for a satellite pass:
+    
+    >>> sat_data = {
+    ...     'Separation': [2.5, 2.1, 1.8, 2.0, 2.4],
+    ...     'Time after start': [60, 120, 180, 240, 300]
+    ... }
+    >>> plotSeparation(sat_data, "GPS BIIR-2 13833", "obs_file.h5",
+    ...               180, 1.8, 2, work_dir="/plots/")
+    """
 
     # Set work directory, default to current working directory
     if work_dir is None:
