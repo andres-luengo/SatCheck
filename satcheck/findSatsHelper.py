@@ -146,25 +146,53 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
             date1 = year_full_1+'-'+mon1+'-'+day1
             date2 = year_full_2+'-'+mon1+'-'+day2
 
-            #MEO parameters: Eccentricity < .25 . 600 < Period < 800
-            #Ascending epoch. Dictionary will append most recent epoch
-            #Using only active sats
-            data = [
-            ('identity', spacetrack_account), # os.environ.get('SPACETRACK_ACCT', 'noahfranz13junk@gmail.com')
-            ('password', spacetrack_password),
-            ('query', 'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/'+date1+'--'+date2+'/NORAD_CAT_ID/'+gps_ids+'/orderby/TLE_LINE1 ASC/format/3le'),
-            ]
-
-            response = requests.post('https://www.space-track.org/ajaxauth/login', data=data)
-
-
-            # write space track info to a file
-            if len(response.content.decode()) > 0:
-                print('######################################################################')
-                print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
-                print('######################################################################')
-                with open(filename, 'w+') as file:
-                    file.write(response.content.decode())
+            # Create a session for proper authentication
+            session = requests.Session()
+            
+            # Login data for authentication
+            login_data = {
+                'identity': spacetrack_account,
+                'password': spacetrack_password
+            }
+            
+            try:
+                # First authenticate to get session cookies
+                login_response = session.post('https://www.space-track.org/ajaxauth/login', data=login_data)
+                
+                if login_response.status_code == 200:
+                    # Now make the query using the authenticated session
+                    query_url = f'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/{date1}--{date2}/NORAD_CAT_ID/{gps_ids}/orderby/TLE_LINE1 ASC/format/3le'
+                    
+                    response = session.get(query_url)
+                    
+                    # Check if we got actual TLE data (not error messages)
+                    response_text = response.content.decode('utf-8', errors='ignore')
+                    
+                    # Skip if response contains error messages or is empty
+                    if (response.status_code == 200 and 
+                        len(response_text.strip()) > 0 and 
+                        'deprecated' not in response_text.lower() and
+                        'error' not in response_text.lower() and
+                        not response_text.strip().startswith('"')):
+                        
+                        print('######################################################################')
+                        print("Downloading active GPS satellite TLEs from Space-Track: " , filename)
+                        print('######################################################################')
+                        
+                        with open(filename, 'w+') as file:
+                            file.write(response_text)
+                    else:
+                        print(f"Warning: No valid TLE data received for {filename}")
+                        print(f"Response status: {response.status_code}")
+                        if len(response_text) < 200:  # Only print short responses
+                            print(f"Response content: {response_text}")
+                else:
+                    print(f"Authentication failed for Space-Track.org. Status code: {login_response.status_code}")
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"Error querying Space-Track.org: {e}")
+            finally:
+                session.close()
 
             time.sleep(12.001)
 
@@ -184,27 +212,67 @@ def load_tle(filename):
     filename [str] : TLE file to open
     return : dictionary of relevant satellite information
     '''
+    # Check if file exists and has content
+    if not os.path.exists(filename):
+        print(f"Warning: TLE file {filename} does not exist")
+        return {}
+    
     # open TLE file
-    f = open(filename)
+    with open(filename, 'r') as f:
+        content = f.read().strip()
+    
+    # Check if file is empty or contains only error messages
+    if not content or len(content) == 0:
+        print(f"Warning: TLE file {filename} is empty")
+        return {}
+    
+    # Check for common error patterns
+    if ('deprecated' in content.lower() or 
+        content.startswith('"') or 
+        'error' in content.lower()):
+        print(f"Warning: TLE file {filename} contains error messages instead of TLE data")
+        print(f"Content preview: {content[:200]}...")
+        return {}
+    
     satlist = []
     satdict = {}
 
-    # read file and output each value
-    l1 = f.readline()
-    while l1:
-        l2 = f.readline()
-        l3 = f.readline()
-        sat = ephem.readtle(l1,l2,l3)
-        name = sat.name
+    # Split content into lines
+    lines = content.split('\n')
+    
+    # Process TLE data in groups of 3 lines
+    i = 0
+    while i < len(lines) - 2:
+        l1 = lines[i].strip()
+        l2 = lines[i + 1].strip()
+        l3 = lines[i + 2].strip()
+        
+        # Skip empty lines
+        if not l1 or not l2 or not l3:
+            i += 1
+            continue
+        
+        try:
+            # Try to parse the TLE
+            sat = ephem.readtle(l1, l2, l3)
+            name = sat.name
 
-        identity = l3.split(' ')[1]
-        real_sat = name.replace('0 ', '') + ' ' + identity
-        satdict[real_sat] = sat
-        satlist.append(sat)
-        l1 = f.readline()
+            # Extract identity from line 3
+            parts = l3.split()
+            if len(parts) > 1:
+                identity = parts[1]
+                real_sat = name.replace('0 ', '') + ' ' + identity
+                satdict[real_sat] = sat
+                satlist.append(sat)
+            
+        except (ValueError, IndexError) as e:
+            # Skip invalid TLE entries
+            print(f"Warning: Skipping invalid TLE entry starting at line {i+1}: {e}")
+            print(f"Lines: {l1[:50]}... {l2[:50]}... {l3[:50]}...")
+        
+        i += 3
 
-    f.close()
-
+    print(f"%i TLEs loaded from: %s" % (len(satlist), filename))
     return satdict
 
 def separation(tle, ra_obs, dec_obs, start_time, gbt):
