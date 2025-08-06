@@ -34,7 +34,7 @@ def downloadTLEs(list_of_filenames, n, spacetrack_account=None, spacetrack_passw
         ids = ''
         for i in nIds:
             ids = ids + str(i) + ','
-        tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account, spacetrack_password)
+        tles = query_space_track(list_of_filenames, ids, idx, spacetrack_account=spacetrack_account, spacetrack_password=spacetrack_password)
         allTLEfiles.append(tles)
 
     # rewrite all TLEs ase unique files
