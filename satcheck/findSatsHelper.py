@@ -312,7 +312,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
                     # Format: class/tle for Two-Line Elements
                     query_url = f'https://www.space-track.org/basicspacedata/query/class/tle/EPOCH/{date1}--{date2}/NORAD_CAT_ID/{gps_ids}/orderby/TLE_LINE1 ASC/format/3le'
                     
-                    print(f"Debug: Query URL: {query_url}")  # Debug output
+                    # print(f"Debug: Query URL: {query_url}")  # Debug output
                     
                     response = session.get(query_url)
                     
@@ -320,11 +320,11 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
                     response_text = response.content.decode('utf-8', errors='ignore')
                     
                     # Debug output
-                    print(f"Debug: Response status: {response.status_code}")
-                    print(f"Debug: Response length: {len(response_text)}")
-                    print(f"Debug: Querying {len(gps_ids.split(','))} satellites for date range {date1} to {date2}")
-                    if len(response_text) < 500:  # Print short responses for debugging
-                        print(f"Debug: Response content preview: {response_text[:200]}")
+                    # print(f"Debug: Response status: {response.status_code}")
+                    # print(f"Debug: Response length: {len(response_text)}")
+                    # print(f"Debug: Querying {len(gps_ids.split(','))} satellites for date range {date1} to {date2}")
+                    # if len(response_text) < 500:  # Print short responses for debugging
+                    #     print(f"Debug: Response content preview: {response_text[:200]}")
                     
                     # Skip if response contains error messages or is empty
                     if (response.status_code == 200 and 
@@ -360,7 +360,7 @@ def query_space_track(fil_files, gps_ids, idx, overwrite=False, spacetrack_accou
                             print(f"Trying alternative query format for historical data...")
                             # Try querying with a broader time range or different approach
                             alt_query_url = f'https://www.space-track.org/basicspacedata/query/class/tle_latest/NORAD_CAT_ID/{gps_ids}/orderby/TLE_LINE1 ASC/format/3le'
-                            print(f"Debug: Alternative query URL: {alt_query_url}")
+                            # print(f"Debug: Alternative query URL: {alt_query_url}")
                             
                             alt_response = session.get(alt_query_url)
                             alt_response_text = alt_response.content.decode('utf-8', errors='ignore')
